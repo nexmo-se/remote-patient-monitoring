@@ -1,0 +1,22 @@
+#room-form-title {
+    text-align: center;
+}
+#room-form {
+    margin: 0 auto;
+    width: 230px;
+    text-align: center;
+    border: 5px black dotted; 
+    padding: 16px;
+}
+
+#room-form .role {
+    width: 180px;
+    margin: 0 auto;
+    text-align: left;
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+#room-form .role label {
+    font-size: 15px;
+}

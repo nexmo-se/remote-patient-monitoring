@@ -1,0 +1,15 @@
+.layoutContainer {
+    width: 20%;
+    height: 100%;
+    z-index: 0;
+    background-color: black;
+}
+.layoutContainer.big {
+    width: 100%;
+}
+.layoutContainer.screen {
+    width: 80%;
+}
+.layoutContainer.hidden {
+    display: none;
+}

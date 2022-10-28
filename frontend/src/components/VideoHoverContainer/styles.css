@@ -1,0 +1,22 @@
+#video-hover-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  /* z-index: 2; */
+}
+
+#video-hover-container .hidden {
+  visibility: hidden;
+}
+
+#video-hover-container .root {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translate(-50%, 0%);
+  padding: 16px;
+  border-radius: 16px;
+  background-color: rgba(255, 255, 255, .3);
+}
