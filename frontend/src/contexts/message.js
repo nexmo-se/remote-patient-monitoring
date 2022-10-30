@@ -9,7 +9,7 @@ export default function MessageProvider({ children }){
   const [ rejectedRequest, setRejectedRequest ] = useState();
 
   const [ requestPublishConnectionIds, setRequestPublishConnectionIds ] = useState([]);
-  const [ requestOneOnOne, setRequestOneOnOne ] = useState();
+  const [ requestCall, setRequestCall ] = useState();
 
   const mSession = useContext(SessionContext);;
 
@@ -43,9 +43,9 @@ export default function MessageProvider({ children }){
       setRequestPublishConnectionIds(JSON.parse(data));    
     });
 
-    mSession.session.on("signal:request-one-on-one", ({ data }) => {
+    mSession.session.on("signal:request-call", ({ data }) => {
       const jsonData = JSON.parse(data);
-      setRequestOneOnOne(jsonData);
+      setRequestCall(jsonData.user);
       removeRaisedHand(jsonData.user)
     });
     mSession.session.on("signal:reject-call", ({ data }) => {
@@ -58,7 +58,7 @@ export default function MessageProvider({ children }){
   return (
     <MessageContext.Provider value={{ 
       requestPublishConnectionIds,
-      requestOneOnOne,
+      requestCall,
       raisedHands,
       lastRaiseHandRequest,
       rejectedRequest

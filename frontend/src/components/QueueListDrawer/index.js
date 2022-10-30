@@ -18,7 +18,7 @@ export default function QueueListDrawer({open, hideDrawer, acceptCall, children}
         const targetDom = e.target.closest('vwc-list-item')
         const targetConnectionId = targetDom.getAttribute("data-connection-id")
         const targetUser = mMessage.raisedHands.find((user) => user.id === targetConnectionId)
-        acceptCall(targetUser)
+        acceptCall(targetUser, true)
     }
 
     function rejectRequest(e) {

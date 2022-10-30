@@ -16,16 +16,11 @@ export default class MessageAPI{
     })
   };
 
-  static async requestOneOnOne(session, requestorStreamId, requesteeStreamId, user){
-    const data = {
-      requestorStreamId,
-      requesteeStreamId,
-      user
-    }
+  static async requestCall(session, user){
     await new Promise((resolve, reject) => {
       session.signal({
-        type: "request-one-on-one",
-        data: JSON.stringify(data)
+        type: "request-call",
+        data: JSON.stringify({user})
       }, (err) => {
         if(err) reject(err);
         else resolve();

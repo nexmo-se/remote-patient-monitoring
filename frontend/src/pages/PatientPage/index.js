@@ -58,19 +58,17 @@ function PatientPage() {
     }, [ mSession.user, mSession.session, mSession.connections, mMessage.requestPublishConnectionIds, mPublisher, in1on1])
 
     useEffect(() => {
-      if (!mMessage.requestOneOnOne) return;
-      if (mMessage.requestOneOnOne.requesteeStreamId  === mPublisher.publisher.stream.id) {
+      if (mMessage.requestCall && mMessage.requestCall.id === mSession.user.id) {
         setNotificationMessage(REQUEST_MESSAGE)
         setOpenNotification(true)
-        joinOneOnOneRoom()
+        setIn1on1(true);
       }
       else if (in1on1) {  
         setNotificationMessage(CALL_ENDED_MESSAGE)
         setOpenNotification(true)
         setIn1on1(false);
-        mSubscriber.unsubscribe()
       }
-    }, [mMessage.requestOneOnOne])
+    }, [mMessage.requestCall])
 
     useEffect(() => {
       if (!mMessage.rejectedRequest) return;
@@ -99,19 +97,22 @@ function PatientPage() {
       setDisableRequestButton(true);
     }
 
-    function joinOneOnOneRoom() {
-      const requestorStream = mSession.streams.find((stream) => stream.id === mMessage.requestOneOnOne.requestorStreamId )
-      if (requestorStream) {
-        mSubscriber.subscribe([requestorStream]);
-        setIn1on1(true);
-      }
-    }
-
     useEffect(() => {
       if (!mPublisher.publisher) return;
       if (in1on1) mPublisher.publisher.publishAudio(true)
       else mPublisher.publisher.publishAudio(false)
     }, [in1on1, mPublisher.publisher])
+
+    useEffect(() => {
+      if (in1on1) {
+        const nurseStreams = mSession.streams.filter((stream) => JSON.parse(stream.connection.data).role === "nurse")
+        mSubscriber.subscribe(nurseStreams)
+      }
+      else {
+        mSubscriber.unsubscribe()
+      }
+
+    }, [in1on1, mSession.streams])
 
     return (
       <div id="patientPage">

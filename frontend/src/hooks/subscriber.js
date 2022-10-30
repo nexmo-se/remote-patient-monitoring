@@ -33,10 +33,6 @@ function useSubscriber({ moderator, screen, camera, custom }){
     }
   }, [ mSession.changedStream ])
 
-  useEffect(() => {
-    console.log("subscriber: ", subscribers)
-  }, [subscribers])
-
   function insertMuteIcon(targetSubscriber,targetDom) {
     const childNodeStr = `<div
     id=${targetSubscriber.id}-mute
@@ -111,10 +107,10 @@ function useSubscriber({ moderator, screen, camera, custom }){
 
   useEffect(() => {
     try{
-      if (mMessage.requestOneOnOne) {
+      if (mMessage.requestCall) {
         subscribers.forEach((subscriber) => {
           const element = document.getElementById(subscriber.id);
-          if (element && (mMessage.requestOneOnOne.requestorStreamId === subscriber.stream.id || mMessage.requestOneOnOne.requesteeStreamId === subscriber.stream.id)) {
+          if (element && (JSON.parse(subscriber.stream.connection.data).role === "nurse" || mMessage.requestCall.id === subscriber.stream.connection.id) ) {
             // ignore if OT_big class already exist
             if (!element.classList.contains("OT_big")) element.classList.add("OT_big");
           }
@@ -128,7 +124,7 @@ function useSubscriber({ moderator, screen, camera, custom }){
     }catch(err){
       console.log(err.stack);
     }
-  }, [ subscribers, cameraLayout, screenLayout, camera, screen, mMessage.requestOneOnOne ]);
+  }, [ subscribers, cameraLayout, screenLayout, camera, screen, mMessage.requestCall ]);
 
 
   return { subscribe, unsubscribe, subscribers }

@@ -17,15 +17,15 @@ import User from "entities/user";
 
 function NursePage() {
     const [in1on1, setIn1on1] = useState(false)
-    const [targetSubscriber, setTargetSubscriber] = useState(null)
+    const [targetUser, setTargetUser] = useState(null)
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
-    const [requestOneOnOne, setRequestOneOnOne] = useState(false)
     const [confirmDialogMessage, setConfirmDialogMessage] = useState("")
     const [openNotification, setOpenNotification] = useState(false)
     const [openQueueList, setOpenQueueList] = useState(false)
     const [pubPageNumber, setPubPageNumber] = useState(0)
     const [pubPerPage, setPubPerPage] = useState(4)
     const [maxPageNumber, setMaxPageNumber] = useState(0)
+    const [requestCall, setRequestCall] = useState(false)
 
 
     const navigate = useNavigate();
@@ -52,40 +52,34 @@ function NursePage() {
       }, [ mSession.streams, mSession.session]);
 
     useEffect(() => {
-      let connectionIds = mSession.connections.filter((connection) => JSON.parse(connection.data).role === "patient").map(connection => connection.id)
+      let connectionIds = mSession.connections.filter((connection) => {
+        return JSON.parse(connection.data).role === "patient" && (!mMessage.requestCall || connection.id !== mMessage.requestCall.id)
+      }).map(connection => connection.id)      
+      
       setMaxPageNumber(Math.ceil(connectionIds.length/pubPerPage))
-
+      
       const requestConnectionIds = connectionIds.splice(pubPageNumber*pubPerPage, pubPerPage)
+      if (mMessage.requestCall) {
+        requestConnectionIds.push(mMessage.requestCall.id)
+      }
       if (requestConnectionIds.length > 0) {
         MessageAPI.requestPublish(mSession.session, requestConnectionIds);
       }
-    }, [mSession.connections, mSession.session, pubPageNumber, pubPerPage])
+    }, [mSession.connections, mSession.session, pubPageNumber, pubPerPage, mMessage.requestCall])
 
     useEffect(() => {
-      if (targetSubscriber && confirmDialogMessage) {
+      if (targetUser && confirmDialogMessage) {
         setOpenConfirmDialog(true)
       }
 
-    }, [targetSubscriber, confirmDialogMessage])
+    }, [targetUser, confirmDialogMessage])
 
     useEffect(() => {
-      if (mPublisher.publisher && targetSubscriber && requestOneOnOne) {
-        const userData = JSON.parse(targetSubscriber.stream.connection.data)
-        MessageAPI.requestOneOnOne(mSession.session, mPublisher.publisher.stream.id, targetSubscriber.stream.id, new User(userData.name, userData.role, targetSubscriber.stream.connection.id));
-        resetDialogState()
-        setRequestOneOnOne(false)
-      }
-
-    }, [mPublisher.publisher, targetSubscriber, requestOneOnOne])
-
-    useEffect(() => {
-      // if patients drop the call
-
-      if (in1on1 && mMessage.requestOneOnOne && !mSubscriber.subscribers.find((subscriber) => subscriber.stream.id === mMessage.requestOneOnOne.requesteeStreamId)) {
+      if (!mMessage.requestCall) return;
+      if (in1on1 && !mSession.connections.find((connection) => connection.id === mMessage.requestCall.id)) {
         setIn1on1(false)
       }
-
-    }, [mSubscriber.subscribers, in1on1, mMessage.requestOneOnOne])
+    }, [mSession.connections, in1on1, mMessage.requestCall])
 
     useEffect(() => {
         if (in1on1) {
@@ -96,19 +90,21 @@ function NursePage() {
           if (mPublisher.publisher) mPublisher.unpublish();
           setPubPerPage(4) 
         }
-    }, [in1on1])
+    }, [in1on1,mPublisher.publisher])
   
     function onCameraContainerClick(e) {
       const targetDom = e.target.closest(".OT_root")
       if (!targetDom) return;
-      const newTargetSubscriber = mSubscriber.subscribers.find((subscriber) => {
+      const targetSubscriber = mSubscriber.subscribers.find((subscriber) => {
         return subscriber.id === targetDom.id
       })
-      if (!newTargetSubscriber) return;
+      if (!targetSubscriber) return;
 
-      if (!mMessage.requestOneOnOne || !(mMessage.requestOneOnOne.requestorStreamId === newTargetSubscriber.stream.id || mMessage.requestOneOnOne.requesteeStreamId === newTargetSubscriber.stream.id)) {
-          setTargetSubscriber(newTargetSubscriber)
-          setConfirmDialogMessage(`Are you sure you want to start 1-1 interation with patient: ${JSON.parse(newTargetSubscriber.stream.connection.data).name} ?`)
+      const targetUser = JSON.parse(targetSubscriber.stream.connection.data)
+
+      if (targetUser.role !== "nurse" && (!mMessage.requestCall || mMessage.requestCall.id !== targetUser.id)) {
+          setTargetUser(new User(targetUser.name, targetUser.role, targetSubscriber.stream.connection.id))
+          setConfirmDialogMessage(`Are you sure you want to start 1-1 interation with patient: ${targetUser.name} ?`)
       }
     }
 
@@ -120,7 +116,7 @@ function NursePage() {
 
 
     function confirmDialogConfirmAction() {
-      joinOneOnOneCall();
+      setRequestCall(true)
     }
 
     function confirmDialogCancelAction() {
@@ -129,14 +125,19 @@ function NursePage() {
 
     function resetDialogState() {
       setOpenConfirmDialog(false)
-      setTargetSubscriber(null)
+      setTargetUser(null)
       setConfirmDialogMessage("")
     }
 
-    function joinOneOnOneCall() {
-      setIn1on1(true);
-      setRequestOneOnOne(true)
-    }
+    useEffect(() => {
+      if (requestCall && targetUser) {
+        setIn1on1(true);
+        MessageAPI.requestCall(mSession.session, targetUser);
+        setRequestCall(false)
+        resetDialogState()
+      }
+
+    }, [targetUser, requestCall])
 
     useEffect(() => {
       if (mMessage.lastRaiseHandRequest) {
@@ -156,20 +157,11 @@ function NursePage() {
       }
     }, [mMessage.lastRaiseHandRequest, mSession.session])
 
-    const acceptRaiseHandRequest = useCallback((user) => {
-      if (!in1on1 && user) {
-        const targetSubscriber = mSubscriber.subscribers.find((subscriber) => subscriber.stream.connection.id === user.id)
-        if (targetSubscriber) {
-          setTargetSubscriber(targetSubscriber)
-          joinOneOnOneCall()
-        }
-      }
-      else if (!in1on1 && mMessage.lastRaiseHandRequest) {
-        const targetSubscriber = mSubscriber.subscribers.find((subscriber) => subscriber.stream.connection.id === mMessage.lastRaiseHandRequest.id)
-        if (targetSubscriber) {
-          setTargetSubscriber(targetSubscriber)
-          joinOneOnOneCall()
-        }
+    const acceptRaiseHandRequest = useCallback((user, forceEndCall=false) => {
+      if (!user) return;
+      if (forceEndCall || !in1on1) {
+          setTargetUser(user)
+          setRequestCall(true)
       }
     }, [mSubscriber.subscribers, mMessage.lastRaiseHandRequest, mSession.session])
 
@@ -211,7 +203,7 @@ function NursePage() {
             title="One On One Request"
             message={mMessage.lastRaiseHandRequest ? `Patient: ${mMessage.lastRaiseHandRequest.name} raised 1-1 request` : ""}
             okText={in1on1 ? "Add to Queue" : "Accept"}
-            okAction={() => acceptRaiseHandRequest()}
+            okAction={() => acceptRaiseHandRequest(mMessage.lastRaiseHandRequest)}
             cancelText="Reject"
             cancelAction={() => rejectRaiseHandRequest()}
             dismissAction={() => setOpenNotification(false)}

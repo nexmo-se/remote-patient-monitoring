@@ -2,13 +2,14 @@ import { useContext } from "react";
 import ControlButton from "components/ControlButton";
 import MessageAPI from "api/message";
 import { SessionContext } from "contexts/session";
+import User from "entities/user";
 
 function HangupButton ({unpublish}) {
   const mSession = useContext(SessionContext);
 
     function handleEndCall() {
       unpublish()
-      MessageAPI.requestOneOnOne(mSession.session, null, null, null);
+      MessageAPI.requestCall(mSession.session, new User());
     }
     return (
       <ControlButton 
