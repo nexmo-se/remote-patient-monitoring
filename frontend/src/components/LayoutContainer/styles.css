@@ -7,9 +7,6 @@
 .layoutContainer.big {
     width: 100%;
 }
-.layoutContainer.screen {
-    width: 80%;
-}
 .layoutContainer.hidden {
     display: none;
 }

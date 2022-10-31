@@ -1,20 +1,16 @@
 // @flow
-import { useState, useEffect, createContext, useRef, useContext } from "react";
+import { useState, useEffect, createContext, useContext} from "react";
 import { SessionContext } from "contexts/session";
+import User from 'entities/user';
 
 export const MessageContext = createContext({});
 export default function MessageProvider({ children }){
+  const [ requestPublishConnectionIds, setRequestPublishConnectionIds ] = useState([]);
+  const [ requestCall, setRequestCall ] = useState();
   const [ raisedHands, setRaisedHands ] = useState([]);
   const [ lastRaiseHandRequest, setLastRaiseHandRequest ] = useState();
   const [ rejectedRequest, setRejectedRequest ] = useState();
-
-  const [ requestPublishConnectionIds, setRequestPublishConnectionIds ] = useState([]);
-  const [ requestCall, setRequestCall ] = useState();
-
   const mSession = useContext(SessionContext);;
-
-  const userRef = useRef();
-  userRef.current = mSession.user;
 
   function removeRaisedHand(user) {
     if(!user) return;
@@ -29,12 +25,13 @@ export default function MessageProvider({ children }){
     if(!mSession.session) return;
     mSession.session.on("signal:raise-hand", ({ data }) => {
       const jsonData = JSON.parse(data);
-      setLastRaiseHandRequest(jsonData.user)
+      const user = User.fromJSON(jsonData.user);
+      setLastRaiseHandRequest(user)
       setRaisedHands((prev) => {
         const isExistingUser = prev.find((raisedHand) => {
-          return raisedHand.id === jsonData.user.id
+          return raisedHand.id === user.id
         });
-        if (!isExistingUser) return [...prev, jsonData.user];
+        if (!isExistingUser) return [...prev, user];
         else return prev;
       });
     });
@@ -45,13 +42,15 @@ export default function MessageProvider({ children }){
 
     mSession.session.on("signal:request-call", ({ data }) => {
       const jsonData = JSON.parse(data);
-      setRequestCall(jsonData.user);
-      removeRaisedHand(jsonData.user)
+      const user = User.fromJSON(jsonData.user);
+      setRequestCall(user);
+      removeRaisedHand(user)
     });
-    mSession.session.on("signal:reject-call", ({ data }) => {
+    mSession.session.on("signal:reject-raise-hand", ({ data }) => {
       const jsonData = JSON.parse(data);
-      removeRaisedHand(jsonData.user)
-      setRejectedRequest(jsonData.user)
+      const user = User.fromJSON(jsonData.user);
+      removeRaisedHand(user)
+      setRejectedRequest(user)
     });
   }, [ mSession.session ])
 

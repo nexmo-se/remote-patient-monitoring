@@ -4,27 +4,25 @@ import { SessionContext } from "contexts/session";
 import { useState, useEffect, useContext } from "react";
 import LayoutManager from "utils/layout-manager";
 
-function useSubscriber({ moderator, screen, camera, custom }){
+function useSubscriber(containerId){
   const [ subscribed, setSubscribed ] = useState([]);
   const [ subscribers, setSubscribers ] = useState([]);
-  const [ cameraLayout, setCameraLayout ] = useState(new LayoutManager(camera));
-  const [ screenLayout, setScreenLayout ] = useState(new LayoutManager(screen));
+  const [ layoutManager, setLayoutManager ] = useState(new LayoutManager(containerId));
   const mSession = useContext(SessionContext)
   const mMessage = useContext(MessageContext)
 
   useEffect(() => {
-    const { changedStream } = mSession;
-    if(changedStream && (changedStream.changedProperty === "hasAudio")){
+    if(mSession.changedStream && (mSession.changedStream.changedProperty === "hasAudio")){
       const targetSubscriber = subscribers.find((subscriber) => 
-        subscriber.stream && changedStream.stream && subscriber.stream.id === changedStream.stream.id
+        subscriber.stream && mSession.changedStream.stream && subscriber.stream.id === mSession.changedStream.stream.id
       )
       
       if (!targetSubscriber) return;
-      const targetDom = document.getElementById(changedStream.oldValue ? targetSubscriber.id : `${targetSubscriber.id}-mute`);
+      const targetDom = document.getElementById(mSession.changedStream.oldValue ? targetSubscriber.id : `${targetSubscriber.id}-mute`);
       
       if (!targetDom) return;
-      targetSubscriber.subscribeToAudio(changedStream.newValue);
-      if (changedStream.newValue) {
+      targetSubscriber.subscribeToAudio(mSession.changedStream.newValue);
+      if (mSession.changedStream.newValue) {
         targetDom.remove();
       }
       else{
@@ -48,13 +46,6 @@ function useSubscriber({ moderator, screen, camera, custom }){
     background-repeat: no-repeat;">
     </div>`;
     targetDom.insertAdjacentHTML('beforeend', childNodeStr);
-  }
-
-  function getContainerId(user, videoType){
-    if(user.role === "moderator" && videoType === "camera") return moderator;
-    else if(videoType === "camera") return camera;
-    else if(videoType === "screen") return screen;
-    else return custom;
   }
 
   function unsubscribe() {
@@ -82,16 +73,12 @@ function useSubscriber({ moderator, screen, camera, custom }){
       })
     })
     await Promise.all(newStreams.map(async (stream) => {
-      const { connection, videoType } = stream;
-      const data = JSON.parse(connection.data);
-      const containerId = getContainerId(data, videoType);
-      const extraData = (data.role === "moderator")? { width: "100%", height: "100%" }: {}
-      const finalOptions = Object.assign({}, extraData, { insertMode: "append", style: { 
+      const subscriberOptions =  { insertMode: "append", style: { 
         buttonDisplayMode: "off",
         nameDisplayMode: "on",
-      }});
+      }};
       const subscriber = await new Promise((resolve, reject) => {
-        const subscriber = mSession.session.subscribe(stream, containerId, finalOptions, (err) => {
+        const subscriber = mSession.session.subscribe(stream, containerId, subscriberOptions, (err) => {
           if(!err) {
             if (!stream.hasAudio) {
               const targetDom = document.getElementById(subscriber.id);
@@ -110,21 +97,19 @@ function useSubscriber({ moderator, screen, camera, custom }){
       if (mMessage.requestCall) {
         subscribers.forEach((subscriber) => {
           const element = document.getElementById(subscriber.id);
-          if (element && (JSON.parse(subscriber.stream.connection.data).role === "nurse" || mMessage.requestCall.id === subscriber.stream.connection.id) ) {
-            // ignore if OT_big class already exist
-            if (!element.classList.contains("OT_big")) element.classList.add("OT_big");
+          if (element && (JSON.parse(subscriber.stream.connection.data).role === "nurse" || mMessage.requestCall.id === subscriber.stream.connection.id) && !element.classList.contains("OT_big")) {
+            element.classList.add("OT_big");
           }
           else if (element) {
             element.classList.remove("OT_big");
           }
         })
       }
-     if (document.getElementById(camera)) cameraLayout.layout();
-      if (document.getElementById(screen)) screenLayout.layout();
+     if (document.getElementById(containerId)) layoutManager.layout();
     }catch(err){
       console.log(err.stack);
     }
-  }, [ subscribers, cameraLayout, screenLayout, camera, screen, mMessage.requestCall ]);
+  }, [ subscribers, layoutManager, containerId, mMessage.requestCall ]);
 
 
   return { subscribe, unsubscribe, subscribers }

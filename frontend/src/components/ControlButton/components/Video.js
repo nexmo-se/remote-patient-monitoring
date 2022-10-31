@@ -1,19 +1,19 @@
 import ControlButton from "../index";
-import '@vonage/vwc-icon-button'
 
-function VideoButton ({hasVideo, ...props}) {
+function Video ({hasVideo, onClick, ...props}) {
+  
   return (
     <ControlButton 
       {...props}
-      name="video-control-button"
+      isActive={hasVideo}
       activeIcon="video-solid"
       inActiveIcon="video-off-solid"
-      active={hasVideo}
+      tooltipName="video-control-button"
       tooltipTitle={hasVideo? "Turn off Camera": "Turn on Camera"}
+      onClick={onClick}
     >
     </ControlButton>
   )
 }
 
-VideoButton.defaultProps = { size: 50, fontSize: 24 }
-export default VideoButton;
+export default Video;

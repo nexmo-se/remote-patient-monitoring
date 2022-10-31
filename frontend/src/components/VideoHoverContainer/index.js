@@ -1,5 +1,5 @@
 // @flow
-import {useState} from "react";
+import { useState } from "react";
 import "./styles.css";
 
 function VideoHoverContainer({ children }){

@@ -1,6 +1,7 @@
-import { useContext, useEffect, useState } from "react"
-import { SessionContext } from "contexts/session";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { SessionContext } from "contexts/session";
+import { MessageContext } from "contexts/message";
 import LayoutContainer from "components/LayoutContainer";
 import LiveBadge from "components/LiveBadge";
 import VideoHoverContainer from "components/VideoHoverContainer";
@@ -8,77 +9,67 @@ import VideoControl from "components/VideoControl";
 import InfoBanner from "components/InfoBanner";
 import Notification from "components/Notification";
 import usePublisher from "hooks/publisher";
-import { MessageContext } from "contexts/message";
 import useSubscriber from "hooks/subscriber";
 import MessageAPI from "api/message";
 import './styles.css'
 
-const REQUEST_MESSAGE = "A Nurse start 1-1 call"
+const REQUEST_MESSAGE = "A Nurse start a call"
 const REJECT_MESSAGE = "Your request was rejected"
-const CALL_ENDED_MESSAGE = "Nurse ended the call"
+const CALL_ENDED_MESSAGE = "Call Ended"
 
 function PatientPage() {
-    const [in1on1, setIn1on1] = useState(false)
+    const [inCall, setInCall] = useState(false)
     const [openNotification, setOpenNotification] = useState(false)
     const [notificationMessage, setNotificationMessage] = useState(REQUEST_MESSAGE)
     const [disableRequestButton, setDisableRequestButton] = useState(false)
     const [queueNumber, setQueueNumber] = useState(null)
 
-    const mPublisher = usePublisher("cameraContainer", true, true);
-
     const navigate = useNavigate();
     const mSession = useContext(SessionContext);
     const mMessage = useContext(MessageContext);
-    const mSubscriber = useSubscriber({ 
-      moderator: "cameraContainer", 
-      camera: "cameraContainer", 
-      screen: "cameraContainer" 
-    });
+    const mPublisher = usePublisher("cameraContainer");
+    const mSubscriber = useSubscriber("cameraContainer");
 
     useEffect(() => {
-        if (!mSession.user || !mSession.room) {
+        if (!mSession.user || !mSession.session) {
             navigate('/')
             return;
         }
-    }, [mSession.user, mSession.room, navigate])
+    }, [mSession.user, mSession.session, navigate])
 
+    // publish/unpublish based on nurse's publish request
     useEffect(() => {
-      if (!mSession.session) {
-        return;
-      }
+      if (!mSession.session) return;
       let nurse = mSession.connections.find((connection) => JSON.parse(connection.data).role === "nurse")
 
-      // Unpublish if there is no nurse in the session or you are not requested to publish
-      if (!in1on1 && mPublisher.publisher && (!nurse || !mMessage.requestPublishConnectionIds.includes(mSession.session.connection.id))) {
+      if (mPublisher.publisher && (!nurse || !mMessage.requestPublishConnectionIds.includes(mSession.session.connection.id))) {
         mPublisher.unpublish()
+        if (inCall) {notify(CALL_ENDED_MESSAGE); setInCall(false);}
       }
-      else if (nurse && mSession.user.id && mMessage.requestPublishConnectionIds.includes(mSession.session.connection.id) && !mPublisher.isPublishing && !mPublisher.publisher) {
+      else if (nurse && mMessage.requestPublishConnectionIds.includes(mSession.session.connection.id) && !mPublisher.isPublishing && !mPublisher.publisher) {
         mPublisher.publish(mSession.user); 
       }
-    }, [ mSession.user, mSession.session, mSession.connections, mMessage.requestPublishConnectionIds, mPublisher, in1on1])
+    }, [ mSession.user, mSession.session, mSession.connections, mMessage.requestPublishConnectionIds, mPublisher, inCall])
 
     useEffect(() => {
       if (mMessage.requestCall && mMessage.requestCall.id === mSession.user.id) {
-        setNotificationMessage(REQUEST_MESSAGE)
-        setOpenNotification(true)
-        setIn1on1(true);
+        notify(REQUEST_MESSAGE)
+        setInCall(true);
       }
-      else if (in1on1) {  
-        setNotificationMessage(CALL_ENDED_MESSAGE)
-        setOpenNotification(true)
-        setIn1on1(false);
+      else if (inCall) {
+        notify(CALL_ENDED_MESSAGE)
+        setInCall(false);
       }
-    }, [mMessage.requestCall])
+    }, [inCall, mSession.user, mMessage.requestCall])
 
     useEffect(() => {
       if (!mMessage.rejectedRequest) return;
-      const me =  mMessage.rejectedRequest.id === mSession.user.id
-      if (me) {
-        setNotificationMessage(REJECT_MESSAGE)
-        setOpenNotification(true)
+      if (mMessage.rejectedRequest.id === mSession.user.id) {
+        notify(REJECT_MESSAGE)
       }
-    }, [mMessage.rejectedRequest])
+    }, [mSession.user, mMessage.rejectedRequest])
 
+    // Set Queue number
     useEffect(() => {
       if (!mSession.user) return;
       const meIndex =  mMessage.raisedHands.findIndex((user) => user.id === mSession.user.id)
@@ -90,37 +81,43 @@ function PatientPage() {
         setDisableRequestButton(false)
       }
 
-    }, [mMessage.raisedHands])
+    }, [mMessage.raisedHands, mSession.user])
 
-    function raiseHand() {
-      MessageAPI.raiseHand(mSession.session, mSession.user);
-      setDisableRequestButton(true);
-    }
-
+    // Unmute if in a call
     useEffect(() => {
       if (!mPublisher.publisher) return;
-      if (in1on1) mPublisher.publisher.publishAudio(true)
+      if (inCall) mPublisher.publisher.publishAudio(true)
       else mPublisher.publisher.publishAudio(false)
-    }, [in1on1, mPublisher.publisher])
+    }, [inCall, mPublisher.publisher])
 
+    // Subscribe to in the call
     useEffect(() => {
-      if (in1on1) {
+      if (inCall) {
         const nurseStreams = mSession.streams.filter((stream) => JSON.parse(stream.connection.data).role === "nurse")
         mSubscriber.subscribe(nurseStreams)
       }
       else {
         mSubscriber.unsubscribe()
       }
+    }, [inCall, mSession.streams])
 
-    }, [in1on1, mSession.streams])
+    function notify(message) {
+      setNotificationMessage(message)
+      setOpenNotification(true)
+    }
+
+    function raiseHand() {
+      MessageAPI.raiseHand(mSession.session, mSession.user);
+      setDisableRequestButton(true);
+    }
 
     return (
       <div id="patientPage">
-        {!in1on1 ? 
+        {!inCall ? 
           <>
           <h1 id="monitoring-message">You are now under monitoring...</h1>
           <vwc-button
-            label={disableRequestButton? "Request sent":"Request 1-1"}
+            label={disableRequestButton? "Request sent":"Call A Nurse"}
             layout="filled"
             shape="pill"
             type="submit"
@@ -134,12 +131,12 @@ function PatientPage() {
           { queueNumber ? <p>{`Your queue number: ${queueNumber}`}</p> : null
           }
           </> : 
-          <InfoBanner message="in 1-1"></InfoBanner>
+          <InfoBanner message="In Call"></InfoBanner>
         }
-        <div className="cameraContainer">
-            <LayoutContainer id="cameraContainer" size="big" hidden={!in1on1} />
+        <div className="videoContainer">
+            <LayoutContainer id="cameraContainer" size="big" hidden={!inCall} />
         </div>
-        {in1on1 && mPublisher.publisher ? (
+        {inCall && mPublisher.publisher ? (
           <VideoHoverContainer>
             <VideoControl 
               publisher={mPublisher.publisher} 
@@ -147,14 +144,14 @@ function PatientPage() {
             />
           </VideoHoverContainer>
         ): null}
-        {mPublisher.publisher ?
-          <div className="logoContainer">
+        {mPublisher.publisher && !inCall?
+          <div className="liveBadgeContainer">
             <LiveBadge></LiveBadge>
           </div>  : ""
         }
         <Notification 
         open={openNotification}
-        title="One on One Request."
+        title="Call Request"
         message={notificationMessage}
         okText="Ok"
         dismissAction={() => setOpenNotification(false)}

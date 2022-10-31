@@ -1,4 +1,3 @@
-// @flow
 import Room from "entities/room";
 
 const url = new URL(window.location.href);

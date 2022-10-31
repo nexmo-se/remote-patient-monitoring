@@ -2,7 +2,8 @@
 import {useState, useCallback, useEffect, useContext} from "react";
 import ControlButton from "components/ControlButton";
 import { SessionContext } from "contexts/session";
-import './styles.css'
+import MessageAPI from "api/message";
+import User from "entities/user";
 
 function VideoControl ({ publisher, unpublish, children }) {
   const [hasAudio, setHasAudio] = useState(publisher.stream?.hasAudio ?? false);
@@ -38,15 +39,19 @@ function VideoControl ({ publisher, unpublish, children }) {
     },
     [publisher]
   );
+
+  function endCall() {
+    unpublish();
+    MessageAPI.requestCall(mSession.session, new User());
+  }
   
   useEffect(
     () => {
       if (!publisher.stream) return;
-
       setHasAudio(publisher.stream.hasAudio);
       setHasVideo(publisher.stream.hasVideo);
     },
-    [publisher.stream]
+    [publisher.stream.hasAudio, publisher.stream.hasVideo]
   )
 
   if (!publisher) {
@@ -67,7 +72,7 @@ function VideoControl ({ publisher, unpublish, children }) {
         />
         {mSession.user.role === "nurse" ?
          <ControlButton.Hangup
-            unpublish={unpublish}
+            onClick={endCall}
         /> : null}
       </div>
     )

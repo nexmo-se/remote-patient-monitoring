@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import '@vonage/vwc-badge';
 
-
-function LiveBadge({ style, className }){
+function LiveBadge(){
   const [ isVisible, setIsVisible ] = useState(true);
 
   useEffect(() => {
@@ -25,6 +24,6 @@ function LiveBadge({ style, className }){
         shape="pill"
         icon={isVisible ? "video-active-solid" : "video-active-line"}
     ></vwc-badge>
-    )
+  )
 }
 export default LiveBadge;

@@ -1,8 +1,4 @@
 // @flow
-const url = new URL(window.location.href);
-const serverPath = process.env.REACT_APP_API_URL || `${url.protocol}//${url.hostname}:${url.port}`;
-
-
 export default class MessageAPI{
   static async requestPublish(session, connectionsIds=[]){
     await new Promise((resolve, reject) => {
@@ -40,10 +36,10 @@ export default class MessageAPI{
     })
   };
 
-  static async rejectRaiseHandRequest(session, user){
+  static async rejectRaiseHand(session, user){
     await new Promise((resolve, reject) => {
       session.signal({
-        type: "reject-call",
+        type: "reject-raise-hand",
         data: JSON.stringify({user})
       }, (err) => {
         if(err) reject(err);

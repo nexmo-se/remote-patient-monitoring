@@ -1,5 +1,5 @@
 // @flow
-import { useState, createContext, useEffect } from "react";
+import { useState, createContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuid } from "uuid";
 import OT from "@opentok/client";
@@ -11,7 +11,6 @@ export const SessionContext = createContext({});
 function SessionProvider({ children }){
   const navigate = useNavigate();
   const [ user, setUser ] = useState();
-  const [ room, setRoom ] = useState();
   const [ session, setSession ] = useState();
   const [ streams, setStreams ] = useState([]);
   const [ changedStream, setChangedStream ] = useState();
@@ -30,12 +29,9 @@ function SessionProvider({ children }){
   }
 
   function handleSessionDisconnected(e){
-    if (e.reason === "forceDisconnected") {
-      console.log('You are forceDisconnected.')
       setConnections([])
       setSession(null)
       setUser(null)
-    }
   }
 
   function handleStreamCreated(e){
@@ -48,21 +44,11 @@ function SessionProvider({ children }){
 
   async function connect(credential){
     try{
-      if (session) {
-        session.off("streamPropertyChanged");
-        session.off("streamCreated");
-        session.off("streamDestroyed");
-        session.off("sessionDisconnected");
-        session.off("connectionCreated");
-        session.off("connectionDestroyed");
-      }
-      setStreams([]); // Clear old streams
       let newSession = OT.initSession(credential.apiKey, credential.sessionId); 
 
       newSession.on("streamPropertyChanged", handleStreamPropertyChanged);
       newSession.on("streamCreated", (e) => handleStreamCreated(e));
       newSession.on("streamDestroyed", (e) => handleStreamDestroyed(e));
-      // one trigger: connection moderation: session.forceDisconnect(connection) 
       newSession.on("sessionDisconnected", (e) => handleSessionDisconnected(e));
       newSession.on("connectionCreated", (e) => handleConnectionCreated(e));
       newSession.on("connectionDestroyed", (e) => handleConnectionDestroyed(e));
@@ -85,13 +71,7 @@ function SessionProvider({ children }){
   async function joinRoom(roomName, user) {
     setUser(user)
     const newRoom = await RoomAPI.createSession(roomName);
-    setRoom(newRoom)
-    let role = "publisher";
-    if (user.role === "nurse") {
-      role="moderator";
-    }
-
-    const credential = await CredentialAPI.generateCredential({sessionId: newRoom.sessionId, role, data: user});
+    const credential = await CredentialAPI.generateCredential({sessionId: newRoom.sessionId, role: "publisher", data: user});
     connect(credential)
   }
 
@@ -106,7 +86,6 @@ function SessionProvider({ children }){
   return (
     <SessionContext.Provider value={{
       user,
-      room,
       session,
       streams,
       changedStream,

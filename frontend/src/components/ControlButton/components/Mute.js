@@ -1,20 +1,20 @@
 // @flow
 import ControlButton from "components/ControlButton";
 
-function MuteButton ({ hasAudio, ...props }) {
+function Mute ({hasAudio, onClick, ...props}) {
 
   return (
     <ControlButton 
       {...props}
-      name="mic-control-button"
+      isActive={hasAudio}
       activeIcon="microphone-2-solid"
       inActiveIcon="mic-mute-solid"
-      active={hasAudio}
+      tooltipName="mic-control-button"
       tooltipTitle={hasAudio? "Mute Microphone": "Unmute Microphone"}
+      onClick={onClick}
     >
     </ControlButton>
   )
 }
 
-MuteButton.defaultProps = { size: 50, fontSize: 24 }
-export default MuteButton;
+export default Mute;

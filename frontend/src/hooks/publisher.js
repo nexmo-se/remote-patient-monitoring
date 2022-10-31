@@ -6,32 +6,13 @@ import delay from "delay";
 import { SessionContext } from "contexts/session";
 
 
-function usePublisher(containerId, autoLayout=true, displayName=true){
+function usePublisher(containerId, displayName=true){
   const [ publisher, setPublisher ] = useState();
   const [ isPublishing, setIsPublishing ] = useState(false);
   const [ publisherOptions, setPublisherOptions ] = useState();
-  const [ hasAudio, setHasAudio] = useState(true);
-  const [ hasVideo, setHasVideo] = useState(true);
-
   const [ stream, setStream ] = useState();
   const [ layoutManager, setLayoutManager ] = useState(new LayoutManager(containerId));
   const mSession = useContext(SessionContext);
-
-
-  useEffect(() => {
-    const { changedStream } = mSession;
-    if(changedStream){
-      const { connection:otherConnection } = changedStream.stream;
-      const { connection:myConnection } = mSession.session;
-      if(otherConnection.id === myConnection.id && publisher?.stream.id === changedStream.stream.id){
-        switch(changedStream.changedProperty){
-          case "hasAudio": return setHasAudio(changedStream.newValue);
-          case "hasVideo": return setHasVideo(changedStream.newValue);
-          default: return;
-        }
-      }
-    }
-  }, [ mSession.changedStream ]);
 
   function handleDestroyed(){
     setPublisher(null);
@@ -45,22 +26,11 @@ function usePublisher(containerId, autoLayout=true, displayName=true){
       setStream(null);
       if (publisher) publisher.destroy();
       setPublisher(null)
-      layoutManager.layout();
   }
 
   function handleAccessDenied(){
-    if (publisher) {
-      resetPublisher();
-    }
-  }
-
-  function resetPublisher() {
-    publisher.off("destroyed", handleDestroyed);
-    publisher.off("streamCreated", handleStreamCreated);
-    publisher.off("streamDestroyed", handleStreamDestroyed);
-    publisher.off("accessDenied", handleAccessDenied)
-    publisher.destroy();
-    setPublisher(null);
+    if (publisher) publisher.destroy();
+    setPublisher(null)
   }
 
   async function unpublish(){
@@ -126,7 +96,6 @@ function usePublisher(containerId, autoLayout=true, displayName=true){
       if(!mSession.session) throw new Error("You are not connected to session");
       setIsPublishing(true);
       if (!publisher) {        
-        const isScreenShare = extraData && extraData.videoSource === 'screen' ? true : false;
         const options = { 
           insertMode: "append",
           name: user.name,
@@ -140,12 +109,11 @@ function usePublisher(containerId, autoLayout=true, displayName=true){
         const finalOptions = Object.assign({}, options, extraData);
         setPublisherOptions(finalOptions);
         const newPublisher = OT.initPublisher(containerId, finalOptions);
-        publishAttempt(newPublisher, 1, isScreenShare);     
+        publishAttempt(newPublisher, 1);     
       }
       else {
         publishAttempt(publisher);
-      }   
- 
+      }
     }catch(err){
       console.log(err.stack);
     }
@@ -153,28 +121,21 @@ function usePublisher(containerId, autoLayout=true, displayName=true){
 
   useEffect(() => {
     try{
-      if(autoLayout && stream && publisher) {
+      if(stream && publisher) {
         const element = document.getElementById(publisher.id);
-
         if (element && !element.classList.contains("OT_big")) element.classList.add("OT_big");
       }
       if (document.getElementById(containerId)) layoutManager.layout();
     }catch(err){
       console.log(err.stack);
     }
-  }, [ publisher, stream, layoutManager, autoLayout, containerId])
+  }, [ publisher, stream, layoutManager, containerId])
 
   return { 
     isPublishing,
     unpublish, 
     publish,
-    hasAudio, 
-    hasVideo,
-    setHasAudio,
-    setHasVideo,
-    publisher, 
-    stream,
-    layoutManager
+    publisher
   }
 }
 export default usePublisher;

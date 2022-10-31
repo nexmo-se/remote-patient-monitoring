@@ -1,6 +1,6 @@
 
+import { useEffect, useRef } from 'react';
 import '@vonage/vwc-snackbar';
-import { useEffect, useRef, useCallback } from 'react';
 
 export default function Notification({open, title, message, okText, okAction, cancelText, cancelAction, dismissAction}) {
     const ref = useRef(null);
@@ -9,6 +9,14 @@ export default function Notification({open, title, message, okText, okAction, ca
       if (!ref) return;
        ref.current.addEventListener('closed', dismissAction);
     }, [ref]);
+
+    function handleOk() {
+        if (okAction && okAction !== dismissAction) okAction();
+    }    
+
+    function handleCancel() {
+        if (cancelAction && cancelAction !== dismissAction) cancelAction();
+    }
 
     return (
         <vwc-snackbar
@@ -30,9 +38,9 @@ export default function Notification({open, title, message, okText, okAction, ca
             dense=""
             type="submit"
             outlined=""
-            onClick={() => {if (okAction) okAction()}}
+            onClick={handleOk}
             style={{marginRight: 8}}
-            >
+        >
             {okText}
             <button type="submit" style={{display: "none"}}></button>
         </vwc-button> : null
@@ -46,7 +54,7 @@ export default function Notification({open, title, message, okText, okAction, ca
             dense=""
             type="submit"
             outlined=""
-            onClick={() => {if (cancelAction) cancelAction()}}
+            onClick={handleCancel}
         >
             {cancelText}
         <button type="submit" style={{display: "none"}}></button>

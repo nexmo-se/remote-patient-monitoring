@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import '@vonage/vwc-icon-button';
+import '@vonage/vwc-tooltip';
 import Hangup from "./components/Hangup";
 import Mute from "./components/Mute";
 import Video from "./components/Video";
-import '@vonage/vwc-icon-button';
-import '@vonage/vwc-tooltip'
-import './styles.css'
+import './styles.css';
 
-function ControlButton({name, activeIcon, inActiveIcon, tooltipTitle, active, ...props}) {
+function ControlButton({isActive, activeIcon, inActiveIcon, tooltipName, tooltipTitle, onClick, ...props}) {
   const [showToolTip, setShowToolTip] = useState(false)
 
   function handleMouseEnter(){
@@ -16,19 +16,20 @@ function ControlButton({name, activeIcon, inActiveIcon, tooltipTitle, active, ..
   function handleMouseLeave(){
     setShowToolTip(false);
   }
+
   return (
-    <div className="control-button tooltip-wrapper" {...props} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+    <div className="control-button tooltip-wrapper" onClick={onClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} {...props}>
       <vwc-icon-button
-        connotation={active ? "success" : "alert"}
-        icon={active ? activeIcon: inActiveIcon}
+        connotation={isActive ? "success" : "alert"}
+        icon={isActive ? activeIcon: inActiveIcon}
         shape="circled"
-        id={name}
+        id={tooltipName}
         layout="filled"
       ></vwc-icon-button>
       <vwc-tooltip
         open={showToolTip || undefined}
-        icon={active ? activeIcon: inActiveIcon}
-        anchor={name}
+        icon={isActive ? activeIcon: inActiveIcon}
+        anchor={tooltipName}
         text={tooltipTitle}
         corner="top"
       ></vwc-tooltip>

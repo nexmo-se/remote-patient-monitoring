@@ -10,10 +10,9 @@ import '@vonage/vwc-button';
 import "./styles.css";
 
 export default function IndexPage() {
-    const navigate = useNavigate();
     const [role, setRole] = useState('patient')
     const [isLoading, setIsLoading] = useState(false)
-
+    const navigate = useNavigate();
     const mSession = useContext(SessionContext);;
 
     function onFormSubmit(e) {
@@ -21,7 +20,6 @@ export default function IndexPage() {
         let user = new User(e.target.elements["userName"].value, role)
         setIsLoading(true);
         mSession.joinRoom(e.target.elements["roomName"].value, user)
-        
     }
 
     useEffect(() => {
@@ -29,7 +27,7 @@ export default function IndexPage() {
             setIsLoading(false);
             navigate(`/${role}`)
         }
-    }, [mSession.session])
+    }, [mSession.session, navigate, role])
 
     if (isLoading) return <FullPageLoading />
     else {
