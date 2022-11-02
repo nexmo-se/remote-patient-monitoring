@@ -15,7 +15,7 @@ import './styles.css'
 
 const REQUEST_MESSAGE = "A Nurse start a call"
 const REJECT_MESSAGE = "Your request was rejected"
-const CALL_ENDED_MESSAGE = "Call Ended"
+const CALL_ENDED_MESSAGE = "Nurse left the call"
 
 function PatientPage() {
     const [inCall, setInCall] = useState(false)
@@ -28,7 +28,10 @@ function PatientPage() {
     const mSession = useContext(SessionContext);
     const mMessage = useContext(MessageContext);
     const mPublisher = usePublisher("cameraContainer");
-    const mSubscriber = useSubscriber("cameraContainer");
+    const mSubscriber = useSubscriber({ 
+        call : "cameraContainer",
+        monitor: "cameraContainer"
+      });
 
     useEffect(() => {
         if (!mSession.user || !mSession.session) {
@@ -60,7 +63,7 @@ function PatientPage() {
         notify(CALL_ENDED_MESSAGE)
         setInCall(false);
       }
-    }, [inCall, mSession.user, mMessage.requestCall])
+    }, [mSession.user, mMessage.requestCall])
 
     useEffect(() => {
       if (!mMessage.rejectedRequest) return;
@@ -87,14 +90,17 @@ function PatientPage() {
     useEffect(() => {
       if (!mPublisher.publisher) return;
       if (inCall) mPublisher.publisher.publishAudio(true)
-      else mPublisher.publisher.publishAudio(false)
+      else {
+        mPublisher.publisher.publishAudio(false)
+        mPublisher.publisher.publishVideo(true)
+      }
     }, [inCall, mPublisher.publisher])
 
     // Subscribe to in the call
     useEffect(() => {
       if (inCall) {
         const nurseStreams = mSession.streams.filter((stream) => JSON.parse(stream.connection.data).role === "nurse")
-        mSubscriber.subscribe(nurseStreams)
+        if (nurseStreams.length > 0) mSubscriber.subscribe(nurseStreams)
       }
       else {
         mSubscriber.unsubscribe()
@@ -151,7 +157,7 @@ function PatientPage() {
         }
         <Notification 
         open={openNotification}
-        title="Call Request"
+        title={notificationMessage === CALL_ENDED_MESSAGE ? "Call Ended" : "Call Request"}
         message={notificationMessage}
         okText="Ok"
         dismissAction={() => setOpenNotification(false)}

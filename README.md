@@ -1,46 +1,49 @@
-# Getting Started with Create React App
+# Vonage Video Remote Patient Monitoring Demo App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Remote Patient monitoring enables Nurses to monitor multiple patients' conditions remotely, and start 1-1 video call with a patient when needed.
 
-## Available Scripts
+The app has following roles:
+- Nurse:
+    - Monitor patients
+    - Start 1-1 call with a patient
+    - Accept/Reject patients' call request
 
-In the project directory, you can run:
+- Patients:
+    - Request 1-1 call
 
-### `npm start`
+Max patients per Page:
+A nurse can monitor up to 10 patients at a time in a monitoring session, and 3 patients at a time while in a call.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+When you first launch the app, you will be asked to enter a room name. Ensure both nurse and participant have the same room name so they can join the same session.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
 
-### `npm test`
+## Environment Variables
+You need to setup some environment variables 
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+  - `PORT` -- this variable works only for manual deployment. Heroku deployment will automatically fill the value.
+  - `API_KEY` -- your Vonage Video API - API Key
+  - `API_SECRET` -- your Vonage Video API - API Secret
 
-### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Deploy to Heroku
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nexmo-se/remote-patient-monitoring)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Manual Deployment
+This section is for manual deployment. It means you need to have a 
+  
+  - Linux machine with `SSH`. Make sure you can `SSH` to your machine.
+  - `NodeJS` installed
+  - `yarn` or `npm` installed
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Once you satisfy the requirements, you can proceed to below steps.
+  
+  - Clone and navigate inside this repository.
+  - Rename `.env.example` to `.env` and fill in the environment variable.
+  - Install dependencies by typing `yarn install` if you are using `yarn` or `npm install` if you are using `npm`
+  - Build the package by typing `yarn build` if you are using `yarn` or `npm run build` if you are using `npm`
+  - Start the server `yarn start` or `npm run start`
+  - Open your web browser. For example `http://localhost:3002`
 
-### `npm run eject`
+The local deployment has been done. You can use various technology such as `ngrok` or `nginx` to make it public. Furthermore, for this demo to run smoothly in public, you need `https` or `SSL`. 
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+`ngrok` will automatically grant you `SSL` certificate. However, if `nginx` was choose as public deployment, you can use `Let's Encrypt` to get your free `SSL` certificate.

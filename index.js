@@ -10,6 +10,12 @@ app.use(cors());
 const opentok = require('./opentok/opentok');
 const rooms = {};
 
+app.use(express.static(path.join(__dirname, "./frontend/build")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "./frontend/build/index.html"));
+});
+
 app.post("/room/:roomName/createSession", async (req, res) => {
   try{
     const { roomName } = req.params ?? 'demoRoom';

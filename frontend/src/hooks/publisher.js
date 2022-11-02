@@ -90,6 +90,8 @@ function usePublisher(containerId, displayName=true){
 
   async function publish(
     user, 
+    hasAudio = false,
+    hasVideo = true,
     extraData
   ){
     try{
@@ -99,8 +101,8 @@ function usePublisher(containerId, displayName=true){
         const options = { 
           insertMode: "append",
           name: user.name,
-          publishAudio: false,
-          publishVideo: true,
+          publishAudio: hasAudio,
+          publishVideo: hasVideo,
           style: { 
             buttonDisplayMode: "off",
             nameDisplayMode: displayName? "on": "off"

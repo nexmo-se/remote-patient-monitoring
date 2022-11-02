@@ -14,9 +14,10 @@ import usePublisher from "hooks/publisher";
 import User from "entities/user";
 import MessageAPI from "api/message";
 import './styles.css'
+import clsx from "clsx";
 
-const MAX_PUBLISHER_PER_PAGE = 9
-const MAX_PUBLISHER_IN_CALL_PER_PAGE = 4;
+const MAX_PUBLISHER_PER_PAGE = 3
+const MAX_PUBLISHER_IN_CALL_PER_PAGE = 2;
 
 function NursePage() {
     const [inCall, setInCall] = useState(false)
@@ -34,8 +35,11 @@ function NursePage() {
     const navigate = useNavigate();
     const mSession = useContext(SessionContext);
     const mMessage = useContext(MessageContext)
-    const mPublisher = usePublisher("cameraContainer");
-    const mSubscriber = useSubscriber("cameraContainer");
+    const mPublisher = usePublisher("callContainer");
+    const mSubscriber = useSubscriber({ 
+      call : "callContainer",
+      monitor: "monitorContainer"
+    });
 
     useEffect(() => {
         if (!mSession.user || !mSession.session) {
@@ -53,7 +57,6 @@ function NursePage() {
 
     // Request patient to publish
     useEffect(() => {
-      let has
       const connectionIds = mSession.connections.filter((connection) => {
         return JSON.parse(connection.data).role === "patient" && (!mMessage.requestCall || connection.id !== mMessage.requestCall.id)
       }).map(connection => connection.id)
@@ -74,32 +77,27 @@ function NursePage() {
     // Adjust number of patient in a page
     useEffect(() => {
       if (inCall) {
-        if (!mPublisher.publisher) mPublisher.publish(mSession.user);
+        if (!mPublisher.publisher) mPublisher.publish(mSession.user, true, true);
         setPubPerPage(MAX_PUBLISHER_IN_CALL_PER_PAGE)
       }
       else { 
         if (mPublisher.publisher) mPublisher.unpublish();
         setPubPerPage(MAX_PUBLISHER_PER_PAGE) 
       }
-    }, [inCall, mPublisher.publisher, mSession.user])
+    }, [inCall, mSession.user])
 
     // End Call session if the patient's connection dropped
     useEffect(() => {
       if (!mMessage.requestCall) return;
-      if (mSession.connections.find((connection) => connection.id === mMessage.requestCall.id)) {
+      if (!inCall && mSession.connections.find((connection) => connection.id === mMessage.requestCall.id)) { 
         setInCall(true)
+        setPubPageNumber(0)
       }
-      else {
+      else if (inCall && !mSession.connections.find((connection) => connection.id === mMessage.requestCall.id)) {
         setInCall(false)
+        setPubPageNumber(0)
       }
     }, [mSession.connections, mMessage.requestCall])
-
-    // Unmute if in a call
-    useEffect(() => {
-      if (!mPublisher.publisher) return;
-      if (inCall) mPublisher.publisher.publishAudio(true)
-      else mPublisher.publisher.publishAudio(false)
-    }, [inCall, mPublisher.publisher])
 
     // Open confirm dialog message
     useEffect(() => {
@@ -140,7 +138,7 @@ function NursePage() {
 
       const targetUser = JSON.parse(targetSubscriber.stream.connection.data)
 
-      if (targetUser.role !== "nurse" && (!mMessage.requestCall || mMessage.requestCall.id !== targetUser.id)) {
+      if (targetUser.role !== "nurse" && (!mMessage.requestCall || mMessage.requestCall.id !== targetSubscriber.stream.connection.id)) {
           setTargetUser(new User(targetUser.name, targetUser.role, targetSubscriber.stream.connection.id))
           setConfirmDialogMessage(`Are you sure you want to start a call with patient: ${targetUser.name} ?`)
       }
@@ -189,11 +187,14 @@ function NursePage() {
             <InfoBanner message="In Call"></InfoBanner> : null
           }
           {maxPageNumber === 0 ? <h1 className="noPatientMessage">No Patient</h1> : null }
-          <div className="videoContainer" onClick={onCameraContainerClick} >
-            <LayoutContainer id="cameraContainer" size="big"/>
+          <div className={clsx("callContainer", (inCall)? "inCall" : "")} onClick={onCameraContainerClick}>
+            <LayoutContainer id="callContainer" size="big"/>
+          </div>
+          <div className={clsx("monitorContainer", (inCall)? "inCall" : "")} onClick={onCameraContainerClick} >
+            <LayoutContainer id="monitorContainer" size="big"/>
           </div>
           {mPublisher.publisher? (
-            <VideoHoverContainer>
+            <VideoHoverContainer className="video-action-container">
               <VideoControl 
                 publisher={mPublisher.publisher} 
                 unpublish={mPublisher.unpublish}
@@ -213,13 +214,14 @@ function NursePage() {
           <button type="submit" style={{display: "none"}}></button>
           </vwc-button>
           {maxPageNumber > 0 ? <p style={{position: "absolute", bottom: "24px", left: "160px"}}>{`Number of patients: ${mSession.connections.filter((connection) => JSON.parse(connection.data).role === "patient").length}`}</p> : null}
-          {pubPageNumber > 0 ? <vwc-icon-button onClick={prevPage} connotation="info" icon="arrow-left-solid" style={{position: "absolute", bottom: "32px", right: "64px"}}></vwc-icon-button> : null}
-          {pubPageNumber + 1 < maxPageNumber ?   <vwc-icon-button onClick={nextPage} connotation="info" icon="arrow-right-solid" style={{position: "absolute", bottom: "32px", right: "24px"}}></vwc-icon-button> : null }
+          {pubPageNumber > 0 ? <vwc-icon-button onClick={prevPage} connotation="info" shape="circled" layout="outlined" icon="arrow-bold-left-solid" style={{position: "absolute", bottom: "32px", right: "84px"}}></vwc-icon-button> : null}
+          {pubPageNumber + 1 < maxPageNumber ?   <vwc-icon-button onClick={nextPage} connotation="info" shape="circled" layout="outlined" icon="arrow-bold-right-solid" style={{position: "absolute", bottom: "32px", right: "24px"}}></vwc-icon-button> : null }
           <ConfirmDialog 
             open={openConfirmDialog} 
             confirmAction={confirmDialogConfirmAction} 
             cancelAction={confirmDialogCancelAction} 
-            message={confirmDialogMessage}>
+            message={confirmDialogMessage}
+            dismissAction={confirmDialogCancelAction}>
           </ConfirmDialog>
           <Notification 
             open={openNotification}

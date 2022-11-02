@@ -5,12 +5,37 @@
     height: 100vh;
 }
 
-#nursePage .videoContainer {
+#nursePage .callContainer {
+    display: none;
+    position: relative;
+}
+
+#nursePage .video-action-container {
+    width: 80%;
+    height: calc(100% - 80px);
+}
+
+#nursePage .callContainer.inCall {
+    display: inline-block;
+    width: 80%;
+    height: calc(100% - 140px);
+    margin-bottom: 140px;
+}
+
+#nursePage .monitorContainer {
+    display: inline-block;
+    margin-right: 4px;
     background-color: black;
     position: relative;
     width: 100%;
     height: calc(100% - 80px);
     margin-bottom: 80px;
+}
+
+#nursePage .monitorContainer.inCall {
+    width: 18%;
+    height: calc(100% - 140px);
+    margin-bottom: 140px;
 }
 
 #nursePage .noPatientMessage {

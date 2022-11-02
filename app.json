@@ -1,0 +1,17 @@
+{
+    "name": "Remote Patient Monitoring Web App",
+    "description": "A reference application for creating remote monitoring system using vonage video api",
+    "repository": "https://github.com/nexmo-se/remote-patient-monitoring",
+    "logo": "https://node-js-sample.herokuapp.com/node.png",
+    "env": {
+      "API_KEY": {
+        "desription": "Vonage Video API - API Key",
+        "required": true
+      },
+      "API_SECRET" : {
+        "description": "Vonage Video API - API Secret",
+        "required": true
+      }
+    }
+  }
+  

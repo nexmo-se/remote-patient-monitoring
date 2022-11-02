@@ -4,7 +4,7 @@
   left: 0;
   bottom: 0;
   right: 0;
-  /* z-index: 2; */
+  z-index: 2;
 }
 
 #video-hover-container .hidden {
@@ -13,7 +13,7 @@
 
 #video-hover-container .root {
   position: absolute;
-  bottom: 10%;
+  bottom: 4%;
   left: 50%;
   transform: translate(-50%, 0%);
   padding: 16px;

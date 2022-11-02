@@ -2,7 +2,7 @@
 import { useState } from "react";
 import "./styles.css";
 
-function VideoHoverContainer({ children }){
+function VideoHoverContainer({ children, ...props }){
   const [ visible, setVisible ] = useState(false);
 
   function handleMouseEnter(){
@@ -18,6 +18,7 @@ function VideoHoverContainer({ children }){
       id="video-hover-container"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      {...props}
     >
       <div className={`root ${!visible ? "hidden" : ""}`}>
         {children}
