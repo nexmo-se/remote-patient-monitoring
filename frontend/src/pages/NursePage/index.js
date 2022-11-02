@@ -16,8 +16,8 @@ import MessageAPI from "api/message";
 import './styles.css'
 import clsx from "clsx";
 
-const MAX_PUBLISHER_PER_PAGE = 3
-const MAX_PUBLISHER_IN_CALL_PER_PAGE = 2;
+const MAX_PUBLISHER_PER_PAGE = 10
+const MAX_PUBLISHER_IN_CALL_PER_PAGE = 3;
 
 function NursePage() {
     const [inCall, setInCall] = useState(false)
