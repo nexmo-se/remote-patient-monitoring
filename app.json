@@ -4,11 +4,11 @@
     "repository": "https://github.com/nexmo-se/remote-patient-monitoring",
     "logo": "https://node-js-sample.herokuapp.com/node.png",
     "env": {
-      "API_KEY": {
+      "VIDEO_API_API_KEY": {
         "desription": "Vonage Video API - API Key",
         "required": true
       },
-      "API_SECRET" : {
+      "VIDEO_API_API_SECRET" : {
         "description": "Vonage Video API - API Secret",
         "required": true
       },

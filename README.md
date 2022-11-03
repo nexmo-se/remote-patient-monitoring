@@ -1,6 +1,6 @@
 # Vonage Video Remote Patient Monitoring Demo App
 
-Remote Patient monitoring enables Nurses to monitor multiple patients' conditions remotely, and start 1-1 video call with a patient when needed.
+Remote Patient monitoring enables a nurse to monitor multiple patients' conditions remotely, and start 1-1 video call with a patient when needed.
 
 The app has following roles:
 - A Nurse can:
@@ -17,7 +17,7 @@ The app has following roles:
 Max patients per Page:
 A nurse can monitor up to 10 patients(configurable) at a time in a monitoring session, and 3 patients at a time while in a call.
 
-When you first launch the app, you will be asked to enter a room name. Ensure both nurse and participant have the same room name so they can join the same session.
+When you first launch the app, you will be asked to enter a room name. Ensure both nurse and patients have the same room name so they can join the same session.
 
 
 ## Environment Variables
@@ -47,6 +47,7 @@ Once you satisfy the requirements, you can proceed to below steps.
   - Build the package by typing `yarn build` if you are using `yarn` or `npm run build` if you are using `npm`
   - Go to root folder `cd ..`
   - Rename `.env.example` to `.env` and fill in the environment variable.
+  - Install dependencies by typing `yarn install` if you are using `yarn` or `npm install` if you are using `npm`
   - Start the server `yarn start` or `npm run start`
   - Open your web browser. For example `http://localhost:3002`
 
