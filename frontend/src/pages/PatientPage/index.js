@@ -55,7 +55,7 @@ function PatientPage() {
     }, [ mSession.user, mSession.session, mSession.connections, mMessage.requestPublishConnectionIds, mPublisher, inCall])
 
     useEffect(() => {
-      if (mMessage.requestCall && mMessage.requestCall.id === mSession.user.id) {
+      if (mMessage.requestCall && mSession.user && mMessage.requestCall.id === mSession.user.id) {
         notify(REQUEST_MESSAGE)
         setInCall(true);
       }

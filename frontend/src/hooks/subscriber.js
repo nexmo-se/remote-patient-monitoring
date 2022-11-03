@@ -33,19 +33,6 @@ function useSubscriber({call, monitor}){
     }
   }, [ mSession.changedStream ])
 
-  useEffect(() => {
-    if (!mMessage.requestCall || !mSession.user || mSession.user.role !== "nurse") return;
-    const targetSubscriber = subscribers.find((subscriber) => mMessage.requestCall.id === subscriber.stream.connection.id)
-    if (targetSubscriber && (!inCallSubscriber || targetSubscriber.id !== inCallSubscriber.id)) {
-      resubscribe(inCallSubscriber);
-      resubscribe(targetSubscriber)
-    }
-    else if (!mMessage.requestCall.id && inCallSubscriber) {
-      resubscribe(inCallSubscriber);
-    }
-  }, [mMessage.requestCall, mSession.user])
-
-
   function insertMuteIcon(targetSubscriber,targetDom) {
     const childNodeStr = `<div
     id=${targetSubscriber.id}-mute
@@ -65,24 +52,12 @@ function useSubscriber({call, monitor}){
 
   function unsubscribe() {
     subscribers.forEach((subscriber) => {
-      mSession.session.unsubscribe(subscriber);
+      if (subscriber.stream) mSession.session.unsubscribe(subscriber);
     })
       setSubscribers([]);
       setSubscribed([]);
   }
 
-  // Change subscriber container
-  function resubscribe(subscriber) {
-    if (!subscriber) return;
-    const stream = subscriber.stream;
-    mSession.session.unsubscribe(subscriber);
-    setSubscribers((prevSubscribers) => {
-      return prevSubscribers.filter((t_subscriber) => {
-        return t_subscriber !== subscriber
-      })
-    })
-    subscribeSingleStream(stream)
-  }
 
   async function subscribe(streams){
     setSubscribed(streams);
@@ -100,34 +75,66 @@ function useSubscriber({call, monitor}){
         })
       })
     })
-    await Promise.all(newStreams.map((stream) => {
-       subscribeSingleStream(stream)
-    }));
-  };
 
-  async function subscribeSingleStream(stream) {
-    if (!stream) return;
-    const subscriberOptions =  { insertMode: "append", style: { 
-      buttonDisplayMode: "off",
-      nameDisplayMode: "on",
-    }};
-    let containerId = monitor;
-    if (JSON.parse(stream.connection.data).role === "nurse" || (mMessage.requestCall && mMessage.requestCall.id === stream.connection.id)) {
-      containerId = call;
-    }
-    const subscriber = await new Promise((resolve, reject) => {
-      const subscriber = mSession.session.subscribe(stream, containerId, subscriberOptions, (err) => {
-        if(!err) {
-          if (!stream.hasAudio) {
-            const targetDom = document.getElementById(subscriber.id);
-            insertMuteIcon(subscriber,targetDom)
-          }
-          resolve(subscriber);
+    if (call !== monitor) {
+      const callContainer = document.getElementById(call);
+      const callSubscribersDom = Array.from(callContainer.getElementsByClassName('OT_subscriber'));
+      
+      // Find the requested subscriber
+      const targetSubscriber = subscribers.find((subscriber) => subscriber.stream && mMessage.requestCall && mMessage.requestCall.id === subscriber.stream.connection.id)
+
+      let hasTargetSubscriber = false
+      callSubscribersDom.forEach(async (callSubscriberDom) => {
+        if (!targetSubscriber || callSubscriberDom.id !== targetSubscriber.id) {
+          // Resubscribe to move the subscriber from call container to monitor container
+          const inCallSubscriber = subscribers.find((subscriber) => subscriber.id === callSubscriberDom.id)
+          newStreams.push(inCallSubscriber.stream)
+          await mSession.session.unsubscribe(inCallSubscriber)      
+          setSubscribers((prevSubscribers) => {
+            return prevSubscribers.filter((t_subscriber) => {
+              return t_subscriber.id !== inCallSubscriber.id
+            })
+          })
+        }
+        else {
+          hasTargetSubscriber =true
         }
       })
-    });
-    setSubscribers((prevSubscribers) => [ ...prevSubscribers, subscriber ]);
-  }
+       // Resubscribe to move the subscriber from monitor container to call container
+      if(!hasTargetSubscriber && targetSubscriber) {
+        newStreams.push(targetSubscriber.stream)
+        await mSession.session.unsubscribe(targetSubscriber)      
+        setSubscribers((prevSubscribers) => {
+          return prevSubscribers.filter((t_subscriber) => {
+            return t_subscriber.id !== targetSubscriber.id
+          })
+        })
+      }
+    }
+
+    await Promise.all(newStreams.map(async (stream) => {
+      const subscriberOptions =  { insertMode: "append", style: { 
+        buttonDisplayMode: "off",
+        nameDisplayMode: "on",
+      }};
+      let containerId = monitor;
+      if (JSON.parse(stream.connection.data).role === "nurse" || (mMessage.requestCall && mMessage.requestCall.id === stream.connection.id)) {
+        containerId = call;
+      }
+      const subscriber = await new Promise((resolve, reject) => {
+        const subscriber = mSession.session.subscribe(stream, containerId, subscriberOptions, (err) => {
+          if(!err) {
+            if (!stream.hasAudio) {
+              const targetDom = document.getElementById(subscriber.id);
+              insertMuteIcon(subscriber,targetDom)
+            }
+            resolve(subscriber);
+          }
+        })
+      });
+      setSubscribers((prevSubscribers) => [ ...prevSubscribers, subscriber ]);
+    }));
+  };
 
   useEffect(() => {
     try{

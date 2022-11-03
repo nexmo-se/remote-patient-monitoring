@@ -53,7 +53,7 @@ function NursePage() {
         if(mSession.session) {
           mSubscriber.subscribe(mSession.streams);
         }
-      }, [ mSession.streams, mSession.session]);
+      }, [ mSession.streams, mSession.session, mMessage.requestCall]);
 
     // Request patient to publish
     useEffect(() => {
