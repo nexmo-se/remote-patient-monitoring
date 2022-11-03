@@ -3,16 +3,19 @@
 Remote Patient monitoring enables Nurses to monitor multiple patients' conditions remotely, and start 1-1 video call with a patient when needed.
 
 The app has following roles:
-- Nurse:
-    - Monitor patients
-    - Start 1-1 call with a patient
-    - Accept/Reject patients' call request
+- A Nurse can:
+  - View up to 10 patients(configurable) at a time
+  - Start a 1-1 call with a patient
+  - Accept/Reject a patient’s call request
+  - View the rest of the patients even in a call
 
-- Patients:
-    - Request 1-1 call
+- Patients can:
+  - Join a 1-1 call that initiated by a nurse
+  - Request to call a nurse
+
 
 Max patients per Page:
-A nurse can monitor up to 10 patients at a time in a monitoring session, and 3 patients at a time while in a call.
+A nurse can monitor up to 10 patients(configurable) at a time in a monitoring session, and 3 patients at a time while in a call.
 
 When you first launch the app, you will be asked to enter a room name. Ensure both nurse and participant have the same room name so they can join the same session.
 

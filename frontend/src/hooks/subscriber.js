@@ -151,6 +151,6 @@ function useSubscriber({call, monitor}){
   }, [ subscribers, callLayout, monitorLayout, call, monitor ]);
 
 
-  return { subscribe, unsubscribe, subscribers, resubscribe }
+  return { subscribe, unsubscribe, subscribers }
 }
 export default useSubscriber;
