@@ -13,7 +13,7 @@ export default function IndexPage() {
     const [role, setRole] = useState('patient')
     const [isLoading, setIsLoading] = useState(false)
     const navigate = useNavigate();
-    const mSession = useContext(SessionContext);;
+    const mSession = useContext(SessionContext);
 
     function onFormSubmit(e) {
         e.preventDefault();

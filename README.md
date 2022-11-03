@@ -21,8 +21,9 @@ When you first launch the app, you will be asked to enter a room name. Ensure bo
 You need to setup some environment variables 
 
   - `PORT` -- this variable works only for manual deployment. Heroku deployment will automatically fill the value.
-  - `API_KEY` -- your Vonage Video API - API Key
-  - `API_SECRET` -- your Vonage Video API - API Secret
+  - `VIDEO_API_API_KEY` -- your Vonage Video API - API Key
+  - `VIDEO_API_API_SECRET` -- your Vonage Video API - API Secret
+  - `REACT_APP_MAX_PATIENTS_PER_PAGE` -- maximum number of patients in a page
 
 
 ## Deploy to Heroku
@@ -38,9 +39,11 @@ This section is for manual deployment. It means you need to have a
 Once you satisfy the requirements, you can proceed to below steps.
   
   - Clone and navigate inside this repository.
-  - Rename `.env.example` to `.env` and fill in the environment variable.
+  - Go to frontend folder `cd frontend`
   - Install dependencies by typing `yarn install` if you are using `yarn` or `npm install` if you are using `npm`
   - Build the package by typing `yarn build` if you are using `yarn` or `npm run build` if you are using `npm`
+  - Go to root folder `cd ..`
+  - Rename `.env.example` to `.env` and fill in the environment variable.
   - Start the server `yarn start` or `npm run start`
   - Open your web browser. For example `http://localhost:3002`
 

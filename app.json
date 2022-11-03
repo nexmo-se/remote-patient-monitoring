@@ -11,6 +11,11 @@
       "API_SECRET" : {
         "description": "Vonage Video API - API Secret",
         "required": true
+      },
+      "REACT_APP_MAX_PATIENTS_PER_PAGE" : {
+        "description": "Max patients in a page",
+        "value": 10,
+        "required": true
       }
     }
   }

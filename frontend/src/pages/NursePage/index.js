@@ -16,7 +16,7 @@ import MessageAPI from "api/message";
 import './styles.css'
 import clsx from "clsx";
 
-const MAX_PUBLISHER_PER_PAGE = 10
+const MAX_PUBLISHER_PER_PAGE = process.env.REACT_APP_MAX_PATIENTS_PER_PAGE || 10
 const MAX_PUBLISHER_IN_CALL_PER_PAGE = 3;
 
 function NursePage() {
