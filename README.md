@@ -4,7 +4,7 @@ Remote Patient monitoring enables a nurse to monitor multiple patients' conditio
 
 The app has following roles:
 - A Nurse can:
-  - View up to 10 patients(configurable) at a time
+  - View up to 10 patients at a time
   - Start a 1-1 call with a patient
   - Accept/Reject a patient’s call request
   - View the rest of the patients even in a call
@@ -15,7 +15,7 @@ The app has following roles:
 
 
 Max patients per Page:
-A nurse can monitor up to 10 patients(configurable) at a time in a monitoring session, and 3 patients at a time while in a call.
+A nurse can monitor up to 10 patients at a time in a monitoring session, and 3 patients at a time while in a call.
 
 When you first launch the app, you will be asked to enter a room name. Ensure both nurse and patients have the same room name so they can join the same session.
 
@@ -26,7 +26,7 @@ You need to setup some environment variables
   - `PORT` -- this variable works only for manual deployment. Heroku deployment will automatically fill the value.
   - `VIDEO_API_API_KEY` -- your Vonage Video API - API Key
   - `VIDEO_API_API_SECRET` -- your Vonage Video API - API Secret
-  - `REACT_APP_MAX_PATIENTS_PER_PAGE` -- maximum number of patients in a page
+  - `REACT_APP_MAX_PATIENTS_PER_PAGE` -- Maximum number of patients in a page, this variable works only for manual deployment. 
 
 
 ## Deploy to Heroku
@@ -42,11 +42,11 @@ This section is for manual deployment. It means you need to have a
 Once you satisfy the requirements, you can proceed to below steps.
   
   - Clone and navigate inside this repository.
+  - Rename `.env.example` to `.env` and fill in the environment variable.
   - Go to frontend folder `cd frontend`
   - Install dependencies by typing `yarn install` if you are using `yarn` or `npm install` if you are using `npm`
   - Build the package by typing `yarn build` if you are using `yarn` or `npm run build` if you are using `npm`
   - Go to root folder `cd ..`
-  - Rename `.env.example` to `.env` and fill in the environment variable.
   - Install dependencies by typing `yarn install` if you are using `yarn` or `npm install` if you are using `npm`
   - Start the server `yarn start` or `npm run start`
   - Open your web browser. For example `http://localhost:3002`
