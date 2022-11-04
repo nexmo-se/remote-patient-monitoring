@@ -51,9 +51,11 @@ function NursePage() {
     // Subscribe to all streams
     useEffect(() => {
         if(mSession.session) {
-          mSubscriber.subscribe(mSession.streams);
+          // Filter the stream that is not destroying
+          const streams = mSession.streams.filter((stream) => mMessage.requestPublishConnectionIds.includes(stream.connection.id) )
+          mSubscriber.subscribe(streams);
         }
-    }, [ mSession.streams, mSession.session]);
+    }, [ mSession.streams, mSession.session, mMessage.requestPublishConnectionIds]);
 
       useEffect(() => {
       // Update callContainer monitorContaner 's children visibility
@@ -86,7 +88,7 @@ function NursePage() {
       mSubscriber.callLayout.layout()
       mSubscriber.monitorLayout.layout()
 
-      }, [mMessage.requestCall, inCall, mSubscriber.callSubscribers, mSubscriber.monitorSubscribers])
+      }, [mMessage.requestCall])
 
     // Request patient to publish
     useEffect(() => {
@@ -116,6 +118,8 @@ function NursePage() {
         if (mPublisher.publisher) mPublisher.unpublish();
         setPubPerPage(MAX_PUBLISHER_PER_PAGE) 
       }
+      if (mSubscriber.callLayout) mSubscriber.callLayout.layout()
+      if (mSubscriber.monitorLayout) mSubscriber.monitorLayout.layout()
     }, [inCall, mSession.user])
 
     // End Call session if the patient's connection dropped

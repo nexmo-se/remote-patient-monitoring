@@ -1,7 +1,7 @@
 // @flow
 import { MessageContext } from "contexts/message";
 import { SessionContext } from "contexts/session";
-import { useState, useEffect, useContext, useCallback } from "react";
+import { useState, useEffect, useContext } from "react";
 import LayoutManager from "utils/layout-manager";
 
 function useSubscriber({call, monitor}){
@@ -90,6 +90,11 @@ function useSubscriber({call, monitor}){
             insertMuteIcon(subscriber,targetDom)
           }
           resolve(subscriber);
+        }
+        else {
+          console.log("subscribe error", err)
+          console.log("subscribe stream", stream)
+
         }
       })
     });
