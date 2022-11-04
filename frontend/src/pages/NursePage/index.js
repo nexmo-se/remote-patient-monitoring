@@ -53,7 +53,40 @@ function NursePage() {
         if(mSession.session) {
           mSubscriber.subscribe(mSession.streams);
         }
-      }, [ mSession.streams, mSession.session, mMessage.requestCall]);
+    }, [ mSession.streams, mSession.session]);
+
+      useEffect(() => {
+      // Update callContainer monitorContaner 's children visibility
+      const targetSubscriberInMonitorContainer = mSubscriber.monitorSubscribers.find((subscriber) => subscriber.stream && mMessage.requestCall && mMessage.requestCall.id === subscriber.stream.connection.id)
+      const targetSubscriberInCallContainer = mSubscriber.callSubscribers.find((subscriber) => subscriber.stream && mMessage.requestCall && mMessage.requestCall.id === subscriber.stream.connection.id)
+
+      const callContainer = document.getElementById("callContainer")
+      const callSubscribersDom = Array.from(callContainer.getElementsByClassName('OT_subscriber'));
+
+      const monitorContainer = document.getElementById("monitorContainer")
+      const monitorSubscribersDom = Array.from(monitorContainer.getElementsByClassName('OT_subscriber'));
+
+      callSubscribersDom.forEach((dom) => {
+        dom.style.display = "none"
+      })
+      monitorSubscribersDom.forEach((dom) => {
+        dom.style.display = "block"
+      })
+      if (targetSubscriberInMonitorContainer) {
+        document.getElementById(targetSubscriberInMonitorContainer.id).style.display = "none"
+      }
+      if (targetSubscriberInCallContainer) {
+        document.getElementById(targetSubscriberInCallContainer.id).style.display = "block"
+      }
+      else {
+        const targetStream = mSession.streams.find((stream) => mMessage.requestCall && mMessage.requestCall.id === stream.connection.id)
+        mSubscriber.subscribeSingleStream(targetStream)
+      }
+
+      mSubscriber.callLayout.layout()
+      mSubscriber.monitorLayout.layout()
+
+      }, [mMessage.requestCall, inCall, mSubscriber.callSubscribers, mSubscriber.monitorSubscribers])
 
     // Request patient to publish
     useEffect(() => {
@@ -61,8 +94,7 @@ function NursePage() {
         return JSON.parse(connection.data).role === "patient" && (!mMessage.requestCall || connection.id !== mMessage.requestCall.id)
       }).map(connection => connection.id)
 
-      const numberOfPatients = mSession.connections.filter((connection) => { return JSON.parse(connection.data).role === "patient"}).length
-      setMaxPageNumber(Math.ceil(numberOfPatients/pubPerPage))
+      setMaxPageNumber(connectionIds.length/pubPerPage)
 
       const requestConnectionIds = connectionIds.splice(pubPageNumber*pubPerPage, pubPerPage)
       if (mMessage.requestCall && mMessage.requestCall.id) {
@@ -131,7 +163,7 @@ function NursePage() {
     function onCameraContainerClick(e) {
       const targetDom = e.target.closest(".OT_root")
       if (!targetDom) return;
-      const targetSubscriber = mSubscriber.subscribers.find((subscriber) => {
+      const targetSubscriber = mSubscriber.monitorSubscribers.find((subscriber) => {
         return subscriber.id === targetDom.id
       })
       if (!targetSubscriber) return;

@@ -123,10 +123,6 @@ function usePublisher(containerId, displayName=true){
 
   useEffect(() => {
     try{
-      if(stream && publisher) {
-        const element = document.getElementById(publisher.id);
-        if (element && !element.classList.contains("OT_big")) element.classList.add("OT_big");
-      }
       if (document.getElementById(containerId)) layoutManager.layout();
     }catch(err){
       console.log(err.stack);

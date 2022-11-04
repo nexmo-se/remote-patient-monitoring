@@ -6,8 +6,9 @@ import LayoutManager from "utils/layout-manager";
 
 function useSubscriber({call, monitor}){
   const [ subscribed, setSubscribed ] = useState([]);
-  const [ subscribers, setSubscribers ] = useState([]);
-  const [ inCallSubscriber, setInCallSubscriber ] = useState();
+  const [ callSubscribers, setCallSubscribers ] = useState([]);
+  const [ monitorSubscribers, setMonitorSubscribers ] = useState([]);
+
   const [ callLayout, setCalLayout ] = useState(new LayoutManager(call));
   const [ monitorLayout, setMonitorLayout ] = useState(new LayoutManager(monitor));  
   const mSession = useContext(SessionContext)
@@ -15,23 +16,32 @@ function useSubscriber({call, monitor}){
 
   useEffect(() => {
     if(mSession.changedStream && (mSession.changedStream.changedProperty === "hasAudio")){
-      const targetSubscriber = subscribers.find((subscriber) => 
+      const targetMonitorSubscriber = monitorSubscribers.find((subscriber) => 
         subscriber.stream && mSession.changedStream.stream && subscriber.stream.id === mSession.changedStream.stream.id
       )
-      
-      if (!targetSubscriber) return;
-      const targetDom = document.getElementById(mSession.changedStream.oldValue ? targetSubscriber.id : `${targetSubscriber.id}-mute`);
-      
-      if (!targetDom) return;
-      targetSubscriber.subscribeToAudio(mSession.changedStream.newValue);
-      if (mSession.changedStream.newValue) {
-        targetDom.remove();
-      }
-      else{
-        insertMuteIcon(targetSubscriber,targetDom);
-      }
+      const targetCallSubscriber = callSubscribers.find((subscriber) => 
+      subscriber.stream && mSession.changedStream.stream && subscriber.stream.id === mSession.changedStream.stream.id
+      )
+
+      updateChangeProperty(targetMonitorSubscriber)
+      updateChangeProperty(targetCallSubscriber)
+
     }
   }, [ mSession.changedStream ])
+
+  function updateChangeProperty(subscriber) {
+    if (!subscriber) return;
+    const targetDom = document.getElementById(mSession.changedStream.oldValue ? subscriber.id : `${subscriber.id}-mute`);
+      
+    if (!targetDom) return;
+    subscriber.subscribeToAudio(mSession.changedStream.newValue);
+    if (mSession.changedStream.newValue) {
+      targetDom.remove();
+    }
+    else{
+      insertMuteIcon(subscriber,targetDom);
+    }
+  }
 
   function insertMuteIcon(targetSubscriber,targetDom) {
     const childNodeStr = `<div
@@ -51,13 +61,45 @@ function useSubscriber({call, monitor}){
   }
 
   function unsubscribe() {
-    subscribers.forEach((subscriber) => {
+    callSubscribers.forEach((subscriber) => {
       if (subscriber.stream) mSession.session.unsubscribe(subscriber);
     })
-      setSubscribers([]);
+    monitorSubscribers.forEach((subscriber) => {
+      if (subscriber.stream) mSession.session.unsubscribe(subscriber);
+    })
+      setCallSubscribers([]);
+      setMonitorSubscribers([]);
       setSubscribed([]);
   }
 
+  async function subscribeSingleStream(stream) {
+    if (!stream) return;
+    const subscriberOptions =  { insertMode: "append", style: { 
+      buttonDisplayMode: "off",
+      nameDisplayMode: "on",
+    }};
+    let containerId = monitor;
+    if (mMessage.requestCall && mMessage.requestCall.id === stream.connection.id) {
+      containerId = call;
+    }
+    const subscriber = await new Promise((resolve, reject) => {
+      const subscriber = mSession.session.subscribe(stream, containerId, subscriberOptions, (err) => {
+        if(!err) {
+          if (!stream.hasAudio) {
+            const targetDom = document.getElementById(subscriber.id);
+            insertMuteIcon(subscriber,targetDom)
+          }
+          resolve(subscriber);
+        }
+      })
+    });
+    if (containerId === call) {
+      setCallSubscribers((prevSubscribers) => [ ...prevSubscribers, subscriber ]);
+    }
+    if (containerId === monitor) {
+      setMonitorSubscribers((prevSubscribers) => [ ...prevSubscribers, subscriber ]);
+    }
+  }
 
   async function subscribe(streams){
     setSubscribed(streams);
@@ -69,95 +111,33 @@ function useSubscriber({call, monitor}){
     const removedStreams = subscribed.filter((stream) => !streamIDs.includes(stream.id));
 
     removedStreams.forEach((stream) => {
-      setSubscribers((prevSubscribers) => {
+      setCallSubscribers((prevSubscribers) => {
+        return prevSubscribers.filter((subscriber) => {
+          return !!subscriber.stream
+        })
+      })
+      setMonitorSubscribers((prevSubscribers) => {
         return prevSubscribers.filter((subscriber) => {
           return !!subscriber.stream
         })
       })
     })
 
-    if (call !== monitor) {
-      const callContainer = document.getElementById(call);
-      const callSubscribersDom = Array.from(callContainer.getElementsByClassName('OT_subscriber'));
-      
-      // Find the requested subscriber
-      const targetSubscriber = subscribers.find((subscriber) => subscriber.stream && mMessage.requestCall && mMessage.requestCall.id === subscriber.stream.connection.id)
-
-      let hasTargetSubscriber = false
-      callSubscribersDom.forEach(async (callSubscriberDom) => {
-        if (!targetSubscriber || callSubscriberDom.id !== targetSubscriber.id) {
-          // Resubscribe to move the subscriber from call container to monitor container
-          const inCallSubscriber = subscribers.find((subscriber) => subscriber.id === callSubscriberDom.id)
-          newStreams.push(inCallSubscriber.stream)
-          await mSession.session.unsubscribe(inCallSubscriber)      
-          setSubscribers((prevSubscribers) => {
-            return prevSubscribers.filter((t_subscriber) => {
-              return t_subscriber.id !== inCallSubscriber.id
-            })
-          })
-        }
-        else {
-          hasTargetSubscriber =true
-        }
-      })
-       // Resubscribe to move the subscriber from monitor container to call container
-      if(!hasTargetSubscriber && targetSubscriber) {
-        newStreams.push(targetSubscriber.stream)
-        await mSession.session.unsubscribe(targetSubscriber)      
-        setSubscribers((prevSubscribers) => {
-          return prevSubscribers.filter((t_subscriber) => {
-            return t_subscriber.id !== targetSubscriber.id
-          })
-        })
-      }
-    }
-
     await Promise.all(newStreams.map(async (stream) => {
-      const subscriberOptions =  { insertMode: "append", style: { 
-        buttonDisplayMode: "off",
-        nameDisplayMode: "on",
-      }};
-      let containerId = monitor;
-      if (JSON.parse(stream.connection.data).role === "nurse" || (mMessage.requestCall && mMessage.requestCall.id === stream.connection.id)) {
-        containerId = call;
-      }
-      const subscriber = await new Promise((resolve, reject) => {
-        const subscriber = mSession.session.subscribe(stream, containerId, subscriberOptions, (err) => {
-          if(!err) {
-            if (!stream.hasAudio) {
-              const targetDom = document.getElementById(subscriber.id);
-              insertMuteIcon(subscriber,targetDom)
-            }
-            resolve(subscriber);
-          }
-        })
-      });
-      setSubscribers((prevSubscribers) => [ ...prevSubscribers, subscriber ]);
+      subscribeSingleStream(stream)
     }));
   };
 
   useEffect(() => {
     try{
-      if (mMessage.requestCall) {
-        subscribers.forEach((subscriber) => {
-          const element = document.getElementById(subscriber.id);
-          if (subscriber.stream && mMessage.requestCall.id === subscriber.stream.connection.id) setInCallSubscriber(subscriber)
-          if (element && (JSON.parse(subscriber.stream.connection.data).role === "nurse" || mMessage.requestCall.id === subscriber.stream.connection.id)) {
-            if (!element.classList.contains("OT_big")) element.classList.add("OT_big");
-          }
-          else if (element) {
-            element.classList.remove("OT_big");
-          }
-        })
-      }
      if (document.getElementById(call)) callLayout.layout();
      if (document.getElementById(monitor)) monitorLayout.layout();
     }catch(err){
       console.log(err.stack);
     }
-  }, [ subscribers, callLayout, monitorLayout, call, monitor ]);
+  }, [ callSubscribers, monitorSubscribers, callLayout, monitorLayout, call, monitor, mMessage.requestCall ]);
 
 
-  return { subscribe, unsubscribe, subscribers }
+  return { subscribe, unsubscribe, callSubscribers, monitorSubscribers, subscribeSingleStream, callLayout, monitorLayout}
 }
 export default useSubscriber;
