@@ -78,18 +78,20 @@ function useSubscriber({call, monitor}){
           }
           sortedSubscribers = [...prev, data].sort((a,b) => a.audioLevel < b.audioLevel ? 1 : -1)
         }
-        setLoudestSubscriber(sortedSubscribers[0])
+        if (sortedSubscribers[0].audioLevel > 0) setLoudestSubscriber(sortedSubscribers[0])
+        else setLoudestSubscriber(null)
+        
         return sortedSubscribers
       })
   }
 
   useEffect(() => {
-    if (!mSession.user || mSession.user.role !== "nurse" || !loudestSubscriber) return;
+    if (!mSession.user || mSession.user.role !== "nurse") return;
 
     let prevLoudestDom = document.getElementsByClassName("loudest")[0];
          
     // If in a call, clear the loudest className
-    if (mMessage.requestCall && mMessage.requestCall.id) {
+    if (mMessage.requestCall && mMessage.requestCall.id || !loudestSubscriber) {
       if (prevLoudestDom) prevLoudestDom.classList.remove('loudest')
       return;
     }
