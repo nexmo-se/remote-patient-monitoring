@@ -9,7 +9,7 @@ function useSubscriber({call, monitor}){
   const [ callSubscribers, setCallSubscribers ] = useState([]);
   const [ monitorSubscribers, setMonitorSubscribers ] = useState([]);
   const [ monitorSubscribersAudioVolume, setMonitorSubscribersAudioVolume] = useState([]);
-  const [ soloAudioSubscriberId, setSoloAudioSubscriberId] = useState()
+  const [ soloAudioSubscriber, setSoloAudioSubscriber] = useState()
 
   const [ loudestSubscriber, setLoudestSubscriber] = useState();
   const [ callLayout, setCalLayout ] = useState(new LayoutManager(call));
@@ -78,11 +78,25 @@ function useSubscriber({call, monitor}){
           }
           sortedSubscribers = [...prev, data].sort((a,b) => a.audioLevel < b.audioLevel ? 1 : -1)
         }
-        if (sortedSubscribers[0].audioLevel > 0) setLoudestSubscriber(sortedSubscribers[0])
-        else setLoudestSubscriber(null)
-        
+        setLoudestSubscriber((prev) => {
+          if (!prev || sortedSubscribers[0].audioLevel > 0.1) return sortedSubscribers[0]
+          else return prev
+        })
         return sortedSubscribers
       })
+  }
+
+  function updateSoloAudioSubscriber(subscriberId) {
+    if (!subscriberId ) {
+      setSoloAudioSubscriber(null)
+      return;
+    }
+    // Find Subscriber 
+    const targetSubscriber = monitorSubscribers.find((subscriber) =>
+    subscriber.id === subscriberId)
+
+    if (targetSubscriber) setSoloAudioSubscriber(targetSubscriber)
+    
   }
 
   useEffect(() => {
@@ -97,13 +111,17 @@ function useSubscriber({call, monitor}){
     }
     
     let currentLoudestDom = document.getElementById(loudestSubscriber.id);
-    if (soloAudioSubscriberId) currentLoudestDom = document.getElementById(soloAudioSubscriberId)
+    let targetId = loudestSubscriber.id;
+    if (soloAudioSubscriber) {
+      currentLoudestDom = document.getElementById(soloAudioSubscriber.id)
+      targetId = soloAudioSubscriber
+    }
 
-    if (prevLoudestDom && (prevLoudestDom.id === soloAudioSubscriberId || prevLoudestDom.id === loudestSubscriber.id))  return;
+    if (prevLoudestDom &&  prevLoudestDom.id === targetId)  return;
     if (prevLoudestDom) prevLoudestDom.classList.remove('loudest')
     if (currentLoudestDom && !currentLoudestDom.classList.contains("loudest")) currentLoudestDom.classList.add("loudest")
 
-  },[loudestSubscriber, mSession.user, mMessage.requestCall, soloAudioSubscriberId])
+  },[loudestSubscriber, mSession.user, mMessage.requestCall, soloAudioSubscriber])
   
   function unsubscribe() {
     callSubscribers.forEach((subscriber) => {
@@ -197,7 +215,7 @@ function useSubscriber({call, monitor}){
     monitorSubscribers, 
     callLayout,
     monitorLayout,
-    soloAudioSubscriberId,
-    setSoloAudioSubscriberId}
+    soloAudioSubscriber,
+    updateSoloAudioSubscriber}
 }
 export default useSubscriber;

@@ -108,7 +108,7 @@ function NursePage() {
     useEffect(() => {
       if (inCall) {
         if (!mPublisher.publisher) mPublisher.publish(mSession.user);
-        mSubscriber.setSoloAudioSubscriberId(null)
+        mSubscriber.updateSoloAudioSubscriber(null)
         setPubPerPage(MAX_PUBLISHER_IN_CALL_PER_PAGE)
       }
       else { 
@@ -143,18 +143,18 @@ function NursePage() {
       const targetDom = e.target.closest(".OT_root")
       if (!targetDom) return;
 
-      if (!mSubscriber.soloAudioSubscriberId || mSubscriber.soloAudioSubscriberId !== targetDom.id) {
+      if (!mSubscriber.soloAudioSubscriber || mSubscriber.soloAudioSubscriber.id !== targetDom.id) {
         mSubscriber.monitorSubscribers.forEach((subscriber) => {
           if (subscriber.id === targetDom.id) subscriber.subscribeToAudio(true)
           else subscriber.subscribeToAudio(false)
         })
-        mSubscriber.setSoloAudioSubscriberId(targetDom.id)
+        mSubscriber.updateSoloAudioSubscriber(targetDom.id);
       }
       else {
         mSubscriber.monitorSubscribers.forEach((subscriber) => {
           subscriber.subscribeToAudio(true)
        })
-        mSubscriber.setSoloAudioSubscriberId(null)
+        mSubscriber.updateSoloAudioSubscriber(null)
       }
     }
 
@@ -184,12 +184,12 @@ function NursePage() {
       }
     }, [inCall])
 
-
     return (
       <QueueListDrawer open={openQueueList} hideDrawer={hideDrawer} acceptCall={acceptRaiseHandRequest} rejectCall={rejectRaiseHandRequest}>
       <div id="nursePage">
           {inCall? 
-            <InfoBanner message="In Call"></InfoBanner> : null
+            <InfoBanner message="In Call"></InfoBanner> : 
+            <p style={{position: "absolute", top: "16px", left: "24px"}}>{`Subscribed Audio: ${mSubscriber.soloAudioSubscriber ? JSON.parse(mSubscriber.soloAudioSubscriber.stream.connection.data).name: "All"}` }</p>
           }
           {maxPageNumber === 0 ? <h1 className="noPatientMessage">No Patient</h1> : null }
           <div className={clsx("callContainer", (inCall)? "inCall" : "")} onClick={onCameraContainerClick}>
