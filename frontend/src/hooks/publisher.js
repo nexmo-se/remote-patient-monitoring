@@ -90,7 +90,7 @@ function usePublisher(containerId, displayName=true){
 
   async function publish(
     user, 
-    hasAudio = false,
+    hasAudio = true,
     hasVideo = true,
     extraData
   ){

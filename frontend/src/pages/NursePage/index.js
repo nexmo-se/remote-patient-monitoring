@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SessionContext } from "contexts/session";
 import { MessageContext } from "contexts/message";
-import ConfirmDialog from "components/ConfirmDialog";
+import StartCallDialog from "components/StartCallDialog";
 import LayoutContainer from "components/LayoutContainer";
 import VideoHoverContainer from 'components/VideoHoverContainer';
 import VideoControl from "components/VideoControl";
@@ -11,7 +11,6 @@ import Notification from "components/Notification";
 import QueueListDrawer from "components/QueueListDrawer";
 import useSubscriber from "hooks/subscriber";
 import usePublisher from "hooks/publisher";
-import User from "entities/user";
 import MessageAPI from "api/message";
 import './styles.css'
 import clsx from "clsx";
@@ -21,12 +20,9 @@ const MAX_PUBLISHER_IN_CALL_PER_PAGE = 3;
 
 function NursePage() {
     const [inCall, setInCall] = useState(false)
-    const [targetUser, setTargetUser] = useState(null)
-    const [requestCall, setRequestCall] = useState(false)
     const [requestPublishIds, setRequestPublishIds] = useState([])
-    const [confirmDialogMessage, setConfirmDialogMessage] = useState("")
-    const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
     const [openNotification, setOpenNotification] = useState(false)
+    const [openStartCallDialog, setOpenStartCallDialog] = useState(false)
     const [openQueueList, setOpenQueueList] = useState(false)
     const [pubPageNumber, setPubPageNumber] = useState(0)
     const [pubPerPage, setPubPerPage] = useState(MAX_PUBLISHER_PER_PAGE)
@@ -111,7 +107,8 @@ function NursePage() {
     // Adjust number of patient in a page
     useEffect(() => {
       if (inCall) {
-        if (!mPublisher.publisher) mPublisher.publish(mSession.user, true, true);
+        if (!mPublisher.publisher) mPublisher.publish(mSession.user);
+        mSubscriber.setSoloAudioSubscriberId(null)
         setPubPerPage(MAX_PUBLISHER_IN_CALL_PER_PAGE)
       }
       else { 
@@ -135,57 +132,30 @@ function NursePage() {
       }
     }, [mSession.connections, mMessage.requestCall])
 
-    // Open confirm dialog message
-    useEffect(() => {
-      if (targetUser && confirmDialogMessage) {
-        setOpenConfirmDialog(true)
-      }
-    }, [targetUser, confirmDialogMessage])
-
     // Open notification
     useEffect(() => {
       if (mMessage.lastRaiseHandRequest) {
         setOpenNotification(true)
       }
     }, [mMessage.lastRaiseHandRequest])
-  
-    // Request one on one call
-    useEffect(() => {
-      if (requestCall && targetUser) {
-        MessageAPI.requestCall(mSession.session, targetUser);
-        setRequestCall(false)
-        resetDialogState()
-      }
-    }, [mSession.session, targetUser, requestCall])
-
-    function resetDialogState() {
-      setOpenConfirmDialog(false)
-      setTargetUser(null)
-      setConfirmDialogMessage("")
-    }
 
     function onCameraContainerClick(e) {
       const targetDom = e.target.closest(".OT_root")
       if (!targetDom) return;
-      const targetSubscriber = mSubscriber.monitorSubscribers.find((subscriber) => {
-        return subscriber.id === targetDom.id
-      })
-      if (!targetSubscriber) return;
 
-      const targetUser = JSON.parse(targetSubscriber.stream.connection.data)
-
-      if (targetUser.role !== "nurse" && (!mMessage.requestCall || mMessage.requestCall.id !== targetSubscriber.stream.connection.id)) {
-          setTargetUser(new User(targetUser.name, targetUser.role, targetSubscriber.stream.connection.id))
-          setConfirmDialogMessage(`Are you sure you want to start a call with patient: ${targetUser.name} ?`)
+      if (!mSubscriber.soloAudioSubscriberId || mSubscriber.soloAudioSubscriberId !== targetDom.id) {
+        mSubscriber.monitorSubscribers.forEach((subscriber) => {
+          if (subscriber.id === targetDom.id) subscriber.subscribeToAudio(true)
+          else subscriber.subscribeToAudio(false)
+        })
+        mSubscriber.setSoloAudioSubscriberId(targetDom.id)
       }
-    }
-
-    function confirmDialogConfirmAction() {
-      setRequestCall(true)
-    }
-
-    function confirmDialogCancelAction() {
-      resetDialogState()
+      else {
+        mSubscriber.monitorSubscribers.forEach((subscriber) => {
+          subscriber.subscribeToAudio(true)
+       })
+        mSubscriber.setSoloAudioSubscriberId(null)
+      }
     }
 
     function hideDrawer() {
@@ -210,8 +180,7 @@ function NursePage() {
     const acceptRaiseHandRequest = useCallback((user, forceEndCall=false) => {
       if (!user) return;
       if (forceEndCall || !inCall) {
-          setTargetUser(user)
-          setRequestCall(true)
+        MessageAPI.requestCall(mSession.session, user)
       }
     }, [inCall])
 
@@ -237,28 +206,34 @@ function NursePage() {
               />
             </VideoHoverContainer>
           ): null}
+          <vwc-icon-button 
+          icon="receptionist-solid" 
+          layout="filled"
+          shape="circled" 
+          connotation="info"
+          onClick={() => setOpenQueueList(true)}
+          style={{position: "absolute", bottom: "32px", left: "24px"}}
+          >
+          </vwc-icon-button>
           <vwc-button
-            label="Queue List"
+            label="Start A Call"
             layout="filled"
             shape="pill"
             type="submit"
             unelevated=""
             connotation="cta"
-            onClick={() => setOpenQueueList(true)}
-            style={{position: "absolute", bottom: "32px", left: "24px"}}
+            onClick={() => setOpenStartCallDialog(true)}
+            style={{position: "absolute", top: "16px", right: "64px"}}
           >
           <button type="submit" style={{display: "none"}}></button>
           </vwc-button>
-          {maxPageNumber > 0 ? <p style={{position: "absolute", bottom: "24px", left: "160px"}}>{`Number of patients: ${mSession.connections.filter((connection) => JSON.parse(connection.data).role === "patient").length}`}</p> : null}
+          {maxPageNumber > 0 ? <p style={{position: "absolute", bottom: "24px", left: "84px"}}>{`Number of patients: ${mSession.connections.filter((connection) => JSON.parse(connection.data).role === "patient").length}`}</p> : null}
           {pubPageNumber > 0 ? <vwc-icon-button onClick={prevPage} connotation="info" shape="circled" layout="outlined" icon="arrow-bold-left-solid" style={{position: "absolute", bottom: "32px", right: "84px"}}></vwc-icon-button> : null}
           {pubPageNumber + 1 < maxPageNumber ?   <vwc-icon-button onClick={nextPage} connotation="info" shape="circled" layout="outlined" icon="arrow-bold-right-solid" style={{position: "absolute", bottom: "32px", right: "24px"}}></vwc-icon-button> : null }
-          <ConfirmDialog 
-            open={openConfirmDialog} 
-            confirmAction={confirmDialogConfirmAction} 
-            cancelAction={confirmDialogCancelAction} 
-            message={confirmDialogMessage}
-            dismissAction={confirmDialogCancelAction}>
-          </ConfirmDialog>
+          <StartCallDialog 
+            open={openStartCallDialog} 
+            dismissAction={() => setOpenStartCallDialog(false)}>
+          </StartCallDialog>
           <Notification 
             open={openNotification}
             title="Call Request"

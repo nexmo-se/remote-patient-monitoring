@@ -22,6 +22,11 @@ export default function MessageProvider({ children }){
   }
 
   useEffect(() => {
+    let nurse = mSession.connections.find((connection) => JSON.parse(connection.data).role === "nurse")
+    if(!nurse) setRequestCall(false)
+  }, [mSession.connections])
+
+  useEffect(() => {
     if(!mSession.session) return;
     mSession.session.on("signal:raise-hand", ({ data }) => {
       const jsonData = JSON.parse(data);

@@ -8,7 +8,10 @@ function useSubscriber({call, monitor}){
   const [ subscribed, setSubscribed ] = useState([]);
   const [ callSubscribers, setCallSubscribers ] = useState([]);
   const [ monitorSubscribers, setMonitorSubscribers ] = useState([]);
+  const [ monitorSubscribersAudioVolume, setMonitorSubscribersAudioVolume] = useState([]);
+  const [ soloAudioSubscriberId, setSoloAudioSubscriberId] = useState()
 
+  const [ loudestSubscriber, setLoudestSubscriber] = useState();
   const [ callLayout, setCalLayout ] = useState(new LayoutManager(call));
   const [ monitorLayout, setMonitorLayout ] = useState(new LayoutManager(monitor));  
   const mSession = useContext(SessionContext)
@@ -23,16 +26,15 @@ function useSubscriber({call, monitor}){
       subscriber.stream && mSession.changedStream.stream && subscriber.stream.id === mSession.changedStream.stream.id
       )
 
-      updateChangeProperty(targetMonitorSubscriber)
-      updateChangeProperty(targetCallSubscriber)
+      updateMuteIconVisibility(targetMonitorSubscriber)
+      updateMuteIconVisibility(targetCallSubscriber)
 
     }
   }, [ mSession.changedStream ])
 
-  function updateChangeProperty(subscriber) {
+  function updateMuteIconVisibility(subscriber) {
     if (!subscriber) return;
     const targetDom = document.getElementById(mSession.changedStream.oldValue ? subscriber.id : `${subscriber.id}-mute`);
-      
     if (!targetDom) return;
     subscriber.subscribeToAudio(mSession.changedStream.newValue);
     if (mSession.changedStream.newValue) {
@@ -53,13 +55,54 @@ function useSubscriber({call, monitor}){
     background: url(${process.env.PUBLIC_URL}/assets/mute.png);
     background-position: center;
     background-size: contain;
-    height: 22px;
-    width: 22px;
+    height: 18px;
+    width: 18px;
     background-repeat: no-repeat;">
     </div>`;
     targetDom.insertAdjacentHTML('beforeend', childNodeStr);
   }
 
+  function handleAudioLevelChange(e) {
+    setMonitorSubscribersAudioVolume((prev) => {
+        const subscriberIndex = prev.findIndex((subscriber) => subscriber.id === e.target.id)
+
+        let sortedSubscribers;
+        if (subscriberIndex !== -1) {
+          prev[subscriberIndex].audioLevel = e.audioLevel
+          sortedSubscribers = prev.sort((a,b) => a.audioLevel < b.audioLevel ? 1 : -1)
+        }
+        else {
+          const data = {
+            id: e.target.id,
+            audioLevel: e.audioLevel
+          }
+          sortedSubscribers = [...prev, data].sort((a,b) => a.audioLevel < b.audioLevel ? 1 : -1)
+        }
+        setLoudestSubscriber(sortedSubscribers[0])
+        return sortedSubscribers
+      })
+  }
+
+  useEffect(() => {
+    if (!mSession.user || mSession.user.role !== "nurse" || !loudestSubscriber) return;
+
+    let prevLoudestDom = document.getElementsByClassName("loudest")[0];
+         
+    // If in a call, clear the loudest className
+    if (mMessage.requestCall && mMessage.requestCall.id) {
+      if (prevLoudestDom) prevLoudestDom.classList.remove('loudest')
+      return;
+    }
+    
+    let currentLoudestDom = document.getElementById(loudestSubscriber.id);
+    if (soloAudioSubscriberId) currentLoudestDom = document.getElementById(soloAudioSubscriberId)
+
+    if (prevLoudestDom && (prevLoudestDom.id === soloAudioSubscriberId || prevLoudestDom.id === loudestSubscriber.id))  return;
+    if (prevLoudestDom) prevLoudestDom.classList.remove('loudest')
+    if (currentLoudestDom && !currentLoudestDom.classList.contains("loudest")) currentLoudestDom.classList.add("loudest")
+
+  },[loudestSubscriber, mSession.user, mMessage.requestCall, soloAudioSubscriberId])
+  
   function unsubscribe() {
     callSubscribers.forEach((subscriber) => {
       if (subscriber.stream) mSession.session.unsubscribe(subscriber);
@@ -98,6 +141,7 @@ function useSubscriber({call, monitor}){
         }
       })
     });
+    subscriber.on("audioLevelUpdated", handleAudioLevelChange)
     if (containerId === call) {
       setCallSubscribers((prevSubscribers) => [ ...prevSubscribers, subscriber ]);
     }
@@ -143,6 +187,15 @@ function useSubscriber({call, monitor}){
   }, [ callSubscribers, monitorSubscribers, callLayout, monitorLayout, call, monitor, mMessage.requestCall ]);
 
 
-  return { subscribe, unsubscribe, callSubscribers, monitorSubscribers, subscribeSingleStream, callLayout, monitorLayout}
+  return { 
+    subscribe, 
+    subscribeSingleStream,
+    unsubscribe, 
+    callSubscribers, 
+    monitorSubscribers, 
+    callLayout,
+    monitorLayout,
+    soloAudioSubscriberId,
+    setSoloAudioSubscriberId}
 }
 export default useSubscriber;

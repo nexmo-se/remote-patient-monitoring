@@ -7,7 +7,7 @@ export default function QueueListDrawer({open, hideDrawer, rejectCall, acceptCal
 
     function acceptRequest(e) {
         const targetDom = e.target.closest('vwc-list-item')
-        const targetConnectionId = targetDom.getAttribute("data-connection-id")
+        const targetConnectionId = targetDom.getAttribute("data-user-id")
         const targetUser = mMessage.raisedHands.find((user) => user.id === targetConnectionId)
         acceptCall(targetUser, true)
     }
@@ -15,7 +15,7 @@ export default function QueueListDrawer({open, hideDrawer, rejectCall, acceptCal
     function rejectRequest(e) {
         e.stopPropagation();
         const targetDom = e.target.closest('vwc-list-item')
-        const targetConnectionId = targetDom.getAttribute("data-connection-id")
+        const targetConnectionId = targetDom.getAttribute("data-user-id")
         const targetUser = mMessage.raisedHands.find((user) => user.id === targetConnectionId)
         rejectCall(targetUser)
     }
@@ -30,7 +30,7 @@ export default function QueueListDrawer({open, hideDrawer, rejectCall, acceptCal
             {Array.isArray(mMessage.raisedHands) && mMessage.raisedHands.map((user, index) => {
                 return (
                     <div key={`queue-item-hr-${index}`}>
-                    <vwc-list-item  data-connection-id={user.id} mwc-list-item="" tabindex="0" aria-disabled="false">
+                    <vwc-list-item  data-user-id={user.id} mwc-list-item="" tabindex="0" aria-disabled="false">
                         <p style={{margin: 0, fontSize: "18px", lineHeight: "32px"}}>{user.name}</p>
                     <vwc-button label="Accept" dense="" type="submit" unelevated="" onClick={acceptRequest}>
                         <button type="submit" style={{display: "none"}}></button>

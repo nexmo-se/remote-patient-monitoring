@@ -89,12 +89,15 @@ function PatientPage() {
     // Unmute if in a call
     useEffect(() => {
       if (!mPublisher.publisher) return;
-      if (inCall) mPublisher.publisher.publishAudio(true)
-      else {
+      if (mMessage.requestCall && mMessage.requestCall.id && mMessage.requestCall.id !== mSession.user.id) {
         mPublisher.publisher.publishAudio(false)
         mPublisher.publisher.publishVideo(true)
       }
-    }, [inCall, mPublisher.publisher])
+      else {
+        mPublisher.publisher.publishAudio(true)
+        mPublisher.publisher.publishVideo(true)
+      }
+    }, [mPublisher.publisher, mMessage.requestCall])
 
     // Subscribe to in the call
     useEffect(() => {
