@@ -80,7 +80,7 @@ function useSubscriber({call, monitor}){
           sortedSubscribers = [...prev, data].sort((a,b) => a.audioLevel < b.audioLevel ? 1 : -1)
         }
         setLoudestSubscriber((prev) => {
-          if (!prev || sortedSubscribers[0].audioLevel > 0.1) return sortedSubscribers[0]
+          if (!prev || sortedSubscribers[0].audioLevel > 0.05) return sortedSubscribers[0]
           else return prev
         })
         return sortedSubscribers

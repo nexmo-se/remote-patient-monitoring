@@ -141,18 +141,18 @@ function NursePage() {
     }, [mSession.connections, mMessage.requestCall])
 
     useEffect(() => {
-      if (mSubscriber.soloAudioSubscriber) {
+      if (!inCall && mSubscriber.soloAudioSubscriber) {
         mSubscriber.monitorSubscribers.forEach((subscriber) => {
           if (subscriber.id === mSubscriber.soloAudioSubscriber.id) subscriber.subscribeToAudio(true)
           else subscriber.subscribeToAudio(false)
         })
       }
-      else if (!mSubscriber.soloAudioSubscriber) {
+      else if (!inCall && !mSubscriber.soloAudioSubscriber) {
         mSubscriber.monitorSubscribers.forEach((subscriber) => {
           subscriber.subscribeToAudio(true)
        })
       }
-    }, [mSubscriber.soloAudioSubscriber, mSession.changedStream])
+    }, [mSubscriber.soloAudioSubscriber, mSession.changedStream, inCall])
 
     // Open notification
     useEffect(() => {
