@@ -110,17 +110,10 @@ function NursePage() {
         if (!mPublisher.publisher) mPublisher.publish(mSession.user);
         mSubscriber.updateSoloAudioSubscriber(null)
         setPubPerPage(MAX_PUBLISHER_IN_CALL_PER_PAGE)
-        mSubscriber.callSubscribers.forEach((subscriber) => {
-        if (mMessage.requestCall.id === subscriber.stream.connection.id) subscriber.subscribeToAudio(true)
-        else subscriber.subscribeToAudio(false)
-        })
       }
       else { 
         if (mPublisher.publisher) mPublisher.unpublish();
         setPubPerPage(MAX_PUBLISHER_PER_PAGE) 
-        mSubscriber.callSubscribers.forEach((subscriber) => {
-        subscriber.subscribeToAudio(false)
-       })
       }
 
       if (mSubscriber.callLayout) mSubscriber.callLayout.layout()
@@ -141,18 +134,32 @@ function NursePage() {
     }, [mSession.connections, mMessage.requestCall])
 
     useEffect(() => {
-      if (!inCall && mSubscriber.soloAudioSubscriber) {
-        mSubscriber.monitorSubscribers.forEach((subscriber) => {
-          if (subscriber.id === mSubscriber.soloAudioSubscriber.id) subscriber.subscribeToAudio(true)
-          else subscriber.subscribeToAudio(false)
+      if (inCall) {
+        mSubscriber.callSubscribers.forEach((subscriber) => {
+        if (mMessage.requestCall.id === subscriber.stream.connection.id) subscriber.subscribeToAudio(true)
+        else subscriber.subscribeToAudio(false)
         })
-      }
-      else if (!inCall && !mSubscriber.soloAudioSubscriber) {
         mSubscriber.monitorSubscribers.forEach((subscriber) => {
-          subscriber.subscribeToAudio(true)
+          subscriber.subscribeToAudio(false)
        })
       }
-    }, [mSubscriber.soloAudioSubscriber, mSession.changedStream, inCall])
+      else {
+        mSubscriber.callSubscribers.forEach((subscriber) => {
+          subscriber.subscribeToAudio(false)
+         })
+         if (mSubscriber.soloAudioSubscriber) {
+          mSubscriber.monitorSubscribers.forEach((subscriber) => {
+            if (subscriber.id === mSubscriber.soloAudioSubscriber.id) subscriber.subscribeToAudio(true)
+            else subscriber.subscribeToAudio(false)
+          })
+        }
+        else {
+          mSubscriber.monitorSubscribers.forEach((subscriber) => {
+            subscriber.subscribeToAudio(true)
+         })
+        }
+      }  
+    }, [mSubscriber.soloAudioSubscriber, inCall, mMessage.requestCall])
 
     // Open notification
     useEffect(() => {
