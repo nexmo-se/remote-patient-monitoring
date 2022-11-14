@@ -36,7 +36,6 @@ function useSubscriber({call, monitor}){
     if (!subscriber) return;
     const targetDom = document.getElementById(mSession.changedStream.oldValue ? subscriber.id : `${subscriber.id}-mute`);
     if (!targetDom) return;
-    subscriber.subscribeToAudio(mSession.changedStream.newValue);
     if (mSession.changedStream.newValue) {
       targetDom.remove();
     }
@@ -63,9 +62,11 @@ function useSubscriber({call, monitor}){
   }
 
   function handleAudioLevelChange(e) {
-    setMonitorSubscribersAudioVolume((prev) => {
-        const subscriberIndex = prev.findIndex((subscriber) => subscriber.id === e.target.id)
-
+    setMonitorSubscribers((prevMonitorSubscribers) => {
+      const isMonitorSubscriber = prevMonitorSubscribers.find((subscriber) => subscriber.id === e.target.id)
+      if (!isMonitorSubscriber) return prevMonitorSubscribers;
+      setMonitorSubscribersAudioVolume((prev) => {
+        const subscriberIndex = prev.findIndex((subscriber) => subscriber.id === e.target.id)        
         let sortedSubscribers;
         if (subscriberIndex !== -1) {
           prev[subscriberIndex].audioLevel = e.audioLevel
@@ -84,6 +85,9 @@ function useSubscriber({call, monitor}){
         })
         return sortedSubscribers
       })
+
+      return prevMonitorSubscribers
+    })
   }
 
   function updateSoloAudioSubscriber(subscriberId) {

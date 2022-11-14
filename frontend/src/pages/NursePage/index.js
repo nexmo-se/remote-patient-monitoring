@@ -110,11 +110,19 @@ function NursePage() {
         if (!mPublisher.publisher) mPublisher.publish(mSession.user);
         mSubscriber.updateSoloAudioSubscriber(null)
         setPubPerPage(MAX_PUBLISHER_IN_CALL_PER_PAGE)
+        mSubscriber.callSubscribers.forEach((subscriber) => {
+        if (mMessage.requestCall.id === subscriber.stream.connection.id) subscriber.subscribeToAudio(true)
+        else subscriber.subscribeToAudio(false)
+        })
       }
       else { 
         if (mPublisher.publisher) mPublisher.unpublish();
         setPubPerPage(MAX_PUBLISHER_PER_PAGE) 
+        mSubscriber.callSubscribers.forEach((subscriber) => {
+        subscriber.subscribeToAudio(false)
+       })
       }
+
       if (mSubscriber.callLayout) mSubscriber.callLayout.layout()
       if (mSubscriber.monitorLayout) mSubscriber.monitorLayout.layout()
     }, [inCall, mSession.user])
@@ -132,6 +140,20 @@ function NursePage() {
       }
     }, [mSession.connections, mMessage.requestCall])
 
+    useEffect(() => {
+      if (mSubscriber.soloAudioSubscriber) {
+        mSubscriber.monitorSubscribers.forEach((subscriber) => {
+          if (subscriber.id === mSubscriber.soloAudioSubscriber.id) subscriber.subscribeToAudio(true)
+          else subscriber.subscribeToAudio(false)
+        })
+      }
+      else if (!mSubscriber.soloAudioSubscriber) {
+        mSubscriber.monitorSubscribers.forEach((subscriber) => {
+          subscriber.subscribeToAudio(true)
+       })
+      }
+    }, [mSubscriber.soloAudioSubscriber, mSession.changedStream])
+
     // Open notification
     useEffect(() => {
       if (mMessage.lastRaiseHandRequest) {
@@ -141,19 +163,12 @@ function NursePage() {
 
     function onCameraContainerClick(e) {
       const targetDom = e.target.closest(".OT_root")
-      if (!targetDom) return;
-
+      if (!targetDom || inCall) return;
+  
       if (!mSubscriber.soloAudioSubscriber || mSubscriber.soloAudioSubscriber.id !== targetDom.id) {
-        mSubscriber.monitorSubscribers.forEach((subscriber) => {
-          if (subscriber.id === targetDom.id) subscriber.subscribeToAudio(true)
-          else subscriber.subscribeToAudio(false)
-        })
         mSubscriber.updateSoloAudioSubscriber(targetDom.id);
       }
       else {
-        mSubscriber.monitorSubscribers.forEach((subscriber) => {
-          subscriber.subscribeToAudio(true)
-       })
         mSubscriber.updateSoloAudioSubscriber(null)
       }
     }
@@ -191,8 +206,8 @@ function NursePage() {
             <InfoBanner message="In Call"></InfoBanner> : 
             <p style={{position: "absolute", top: "16px", left: "24px"}}>{`Subscribed Audio: ${mSubscriber.soloAudioSubscriber ? JSON.parse(mSubscriber.soloAudioSubscriber.stream.connection.data).name: "All"}` }</p>
           }
-          {maxPageNumber === 0 ? <h1 className="noPatientMessage">No Patient</h1> : null }
-          <div className={clsx("callContainer", (inCall)? "inCall" : "")} onClick={onCameraContainerClick}>
+          {maxPageNumber === 0 && !inCall? <h1 className="noPatientMessage">No Patient</h1> : null }
+          <div className={clsx("callContainer", (inCall)? "inCall" : "")}>
             <LayoutContainer id="callContainer" size="big"/>
           </div>
           <div className={clsx("monitorContainer", (inCall)? "inCall" : "")} onClick={onCameraContainerClick} >

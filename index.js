@@ -46,7 +46,7 @@ app.post("/room/generateCredential", (req, res) => {
 });
 
 
-const serverPort = process.env.PORT || 5000;
+const serverPort = process.env.PORT || process.env.NERU_APP_PORT || 3002;
 app.listen(serverPort, () => {
     console.log('server started on port', serverPort);
   });
