@@ -17,35 +17,36 @@ function useSubscriber({call, monitor}){
   const mSession = useContext(SessionContext)
   const mMessage = useContext(MessageContext)
 
-  useEffect(() => {
-    if(mSession.changedStream && (mSession.changedStream.changedProperty === "hasAudio")){
+  useEffect(()=> {
+    // Ensure cover the stream that doesnt trigger changedStream event
+    mSession.streams.forEach((stream) => {
       const targetMonitorSubscriber = monitorSubscribers.find((subscriber) => 
-        subscriber.stream && mSession.changedStream.stream && subscriber.stream.id === mSession.changedStream.stream.id
+      subscriber.stream && stream && subscriber.stream.id === stream.id
       )
       const targetCallSubscriber = callSubscribers.find((subscriber) => 
-      subscriber.stream && mSession.changedStream.stream && subscriber.stream.id === mSession.changedStream.stream.id
+      subscriber.stream && stream && subscriber.stream.id === stream.id
       )
+  
+      updateMuteIconVisibility(targetMonitorSubscriber, stream)
+      updateMuteIconVisibility(targetCallSubscriber, stream)
+    })
 
-      updateMuteIconVisibility(targetMonitorSubscriber)
-      updateMuteIconVisibility(targetCallSubscriber)
+  }, [mSession.changedStream])
 
-    }
-  }, [ mSession.changedStream ])
-
-  function updateMuteIconVisibility(subscriber) {
+  function updateMuteIconVisibility(subscriber, stream) {
     if (!subscriber) return;
-    const targetDom = document.getElementById(mSession.changedStream.oldValue ? subscriber.id : `${subscriber.id}-mute`);
-    if (!targetDom) return;
-    if (mSession.changedStream.newValue) {
-      targetDom.remove();
+    if (stream.hasAudio) {
+      const targetDom = document.getElementById(`${subscriber.id}-mute`);
+      if (targetDom) targetDom.remove();
     }
-    else{
-      insertMuteIcon(subscriber,targetDom);
+    else {
+      const targetDom = document.getElementById(subscriber.id);
+      if (targetDom) insertMuteIcon(subscriber,targetDom);
     }
   }
 
   function insertMuteIcon(targetSubscriber,targetDom) {
-    if (document.getElementById(`${targetSubscriber.id}-mute)`)) return;
+    if (document.getElementById(`${targetSubscriber.id}-mute`)) return;
     const childNodeStr = `<div
     id=${targetSubscriber.id}-mute
     style="

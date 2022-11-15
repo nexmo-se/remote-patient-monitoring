@@ -139,10 +139,9 @@ function NursePage() {
         if (mMessage.requestCall.id === subscriber.stream.connection.id) subscriber.subscribeToAudio(true)
         else subscriber.subscribeToAudio(false)
         })
-        // subscribe to listen to the monitor subscriber audio change
         mSubscriber.monitorSubscribers.forEach((subscriber) => {
-          subscriber.subscribeToAudio(true)
-       })
+          subscriber.subscribeToAudio(false)
+        })
       }
       else {
         mSubscriber.callSubscribers.forEach((subscriber) => {
