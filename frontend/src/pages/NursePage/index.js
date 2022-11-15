@@ -159,7 +159,7 @@ function NursePage() {
          })
         }
       }  
-    }, [mSubscriber.soloAudioSubscriber, inCall, mMessage.requestCall])
+    }, [mSubscriber.soloAudioSubscriber, inCall, mSession.changedStream, mMessage.requestCall])
 
     // Open notification
     useEffect(() => {
