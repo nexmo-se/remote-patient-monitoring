@@ -139,8 +139,9 @@ function NursePage() {
         if (mMessage.requestCall.id === subscriber.stream.connection.id) subscriber.subscribeToAudio(true)
         else subscriber.subscribeToAudio(false)
         })
+        // subscribe to listen to the monitor subscriber audio change
         mSubscriber.monitorSubscribers.forEach((subscriber) => {
-          subscriber.subscribeToAudio(false)
+          subscriber.subscribeToAudio(true)
        })
       }
       else {
@@ -159,7 +160,7 @@ function NursePage() {
          })
         }
       }  
-    }, [mSubscriber.soloAudioSubscriber, inCall, mSession.changedStream, mMessage.requestCall])
+    }, [mSubscriber.soloAudioSubscriber, inCall, mMessage.requestCall])
 
     // Open notification
     useEffect(() => {

@@ -45,6 +45,7 @@ function useSubscriber({call, monitor}){
   }
 
   function insertMuteIcon(targetSubscriber,targetDom) {
+    if (document.getElementById(`${targetSubscriber.id}-mute)`)) return;
     const childNodeStr = `<div
     id=${targetSubscriber.id}-mute
     style="
