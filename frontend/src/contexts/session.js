@@ -62,6 +62,7 @@ function SessionProvider({ children }){
       const userData = JSON.parse(newSession.connection.data)
       const newUser = new User(userData.name, userData.role, newSession.connection.id)
       setUser(newUser)
+      console.log("session: ", newSession)
       setSession(newSession);
     }catch(err){
       console.log(err);

@@ -14,6 +14,7 @@ import usePublisher from "hooks/publisher";
 import MessageAPI from "api/message";
 import './styles.css'
 import clsx from "clsx";
+import User from "entities/user";
 
 const MAX_PUBLISHER_PER_PAGE = process.env.REACT_APP_MAX_PATIENTS_PER_PAGE || 10
 const MAX_PUBLISHER_IN_CALL_PER_PAGE = 3;
@@ -25,7 +26,6 @@ function NursePage() {
     const [openStartCallDialog, setOpenStartCallDialog] = useState(false)
     const [openQueueList, setOpenQueueList] = useState(false)
     const [pubPageNumber, setPubPageNumber] = useState(0)
-    const [pubPerPage, setPubPerPage] = useState(MAX_PUBLISHER_PER_PAGE)
     const [maxPageNumber, setMaxPageNumber] = useState(1)
 
     const navigate = useNavigate();
@@ -81,8 +81,11 @@ function NursePage() {
         mSubscriber.subscribeSingleStream(targetStream)
       }
 
-      mSubscriber.callLayout.layout()
-      mSubscriber.monitorLayout.layout()
+      // delay to ensure style is applied before layout
+      setTimeout(function() {
+        mSubscriber.callLayout.layout()
+        mSubscriber.monitorLayout.layout()
+      }, 2000);
 
       }, [mMessage.requestCall])
 
@@ -92,28 +95,28 @@ function NursePage() {
         return JSON.parse(connection.data).role === "patient" && (!mMessage.requestCall || connection.id !== mMessage.requestCall.id)
       }).map(connection => connection.id)
 
+      let pubPerPage = mMessage.requestCall && mMessage.requestCall.id ? MAX_PUBLISHER_IN_CALL_PER_PAGE : MAX_PUBLISHER_PER_PAGE;
       setMaxPageNumber(connectionIds.length/pubPerPage)
 
       const requestConnectionIds = connectionIds.splice(pubPageNumber*pubPerPage, pubPerPage)
-      if (mMessage.requestCall && mMessage.requestCall.id) {
-        requestConnectionIds.push(mMessage.requestCall.id)
-      }
+
+      if (mMessage.requestCall && mMessage.requestCall.id) requestConnectionIds.push(mMessage.requestCall.id) 
+
       if (requestConnectionIds.length > 0 && requestPublishIds !== requestConnectionIds) {
         MessageAPI.requestPublish(mSession.session, requestConnectionIds);
         setRequestPublishIds(requestConnectionIds)
       }
-    }, [mSession.connections, mSession.session, pubPageNumber, pubPerPage, mMessage.requestCall])
+    }, [mSession.connections, mSession.session, pubPageNumber, mMessage.requestCall])
 
     // Adjust number of patient in a page
     useEffect(() => {
       if (inCall) {
         if (!mPublisher.publisher) mPublisher.publish(mSession.user);
         mSubscriber.updateSoloAudioSubscriber(null)
-        setPubPerPage(MAX_PUBLISHER_IN_CALL_PER_PAGE)
       }
-      else { 
-        if (mPublisher.publisher) mPublisher.unpublish();
-        setPubPerPage(MAX_PUBLISHER_PER_PAGE) 
+      else if (mPublisher.publisher) { 
+        mPublisher.unpublish();
+        MessageAPI.requestCall(mSession.session, new User())
       }
 
       if (mSubscriber.callLayout) mSubscriber.callLayout.layout()
@@ -136,7 +139,7 @@ function NursePage() {
     useEffect(() => {
       if (inCall) {
         mSubscriber.callSubscribers.forEach((subscriber) => {
-        if (mMessage.requestCall.id === subscriber.stream.connection.id) subscriber.subscribeToAudio(true)
+        if (subscriber.stream && mMessage.requestCall.id === subscriber.stream.connection.id) subscriber.subscribeToAudio(true)
         else subscriber.subscribeToAudio(false)
         })
         mSubscriber.monitorSubscribers.forEach((subscriber) => {
