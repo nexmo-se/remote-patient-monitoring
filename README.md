@@ -43,11 +43,8 @@ Once you satisfy the requirements, you can proceed to below steps.
   
   - Clone and navigate inside this repository.
   - Rename `.env.example` to `.env` and fill in the environment variable.
-  - Go to frontend folder `cd frontend`
   - Install dependencies by typing `yarn install` if you are using `yarn` or `npm install` if you are using `npm`
   - Build the package by typing `yarn build` if you are using `yarn` or `npm run build` if you are using `npm`
-  - Go to root folder `cd ..`
-  - Install dependencies by typing `yarn install` if you are using `yarn` or `npm install` if you are using `npm`
   - Start the server `yarn start` or `npm run start`
   - Open your web browser. For example `http://localhost:3002`
 

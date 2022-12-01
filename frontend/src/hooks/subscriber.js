@@ -18,30 +18,32 @@ function useSubscriber({call, monitor}){
   const mMessage = useContext(MessageContext)
 
   useEffect(()=> {
+    if (!mSession.changedStream) return;
     // Ensure cover the stream that doesnt trigger changedStream event
-    mSession.streams.forEach((stream) => {
-      const targetMonitorSubscriber = monitorSubscribers.find((subscriber) => 
-      subscriber.stream && stream && subscriber.stream.id === stream.id
-      )
-      const targetCallSubscriber = callSubscribers.find((subscriber) => 
-      subscriber.stream && stream && subscriber.stream.id === stream.id
-      )
-  
-      updateMuteIconVisibility(targetMonitorSubscriber, stream)
-      updateMuteIconVisibility(targetCallSubscriber, stream)
-    })
+    const targetMonitorSubscriber = monitorSubscribers.find((subscriber) =>  
+      mSession.changedStream.stream.id === subscriber.stream.id
+    )
+    const targetCallSubscriber = callSubscribers.find((subscriber) => 
+      mSession.changedStream.stream.id === subscriber.stream.id
+    )
+
+    updateMuteIconVisibility(targetMonitorSubscriber, mSession.changedStream.stream)
+    updateMuteIconVisibility(targetCallSubscriber, mSession.changedStream.stream)
 
   }, [mSession.changedStream])
 
-  function updateMuteIconVisibility(subscriber, stream) {
+  function updateMuteIconVisibility(subscriber, stream, forceMute= false) {
     if (!subscriber) return;
-    if (stream.hasAudio) {
-      const targetDom = document.getElementById(`${subscriber.id}-mute`);
-      if (targetDom) targetDom.remove();
-    }
-    else {
+    let mute = true
+    if ((stream && stream.hasAudio) || (!stream && !forceMute)) mute= false 
+
+    if (mute) {
       const targetDom = document.getElementById(subscriber.id);
       if (targetDom) insertMuteIcon(subscriber,targetDom);
+    }
+    else {
+      const targetDom = document.getElementById(`${subscriber.id}-mute`);
+      if (targetDom) targetDom.remove();
     }
   }
 
@@ -52,7 +54,7 @@ function useSubscriber({call, monitor}){
     style="
     position: absolute; 
     bottom: 8px; 
-    left: 8px;
+    right: 8px;
     background: url(${process.env.PUBLIC_URL}/assets/mute.png);
     background-position: center;
     background-size: contain;
@@ -64,11 +66,10 @@ function useSubscriber({call, monitor}){
   }
 
   function handleAudioLevelChange(e) {
-    setMonitorSubscribers((prevMonitorSubscribers) => {
-      const isMonitorSubscriber = prevMonitorSubscribers.find((subscriber) => subscriber.id === e.target.id)
-      if (!isMonitorSubscriber) return prevMonitorSubscribers;
       setMonitorSubscribersAudioVolume((prev) => {
-        const subscriberIndex = prev.findIndex((subscriber) => subscriber.id === e.target.id)        
+        // check if it is monitor subscriber
+        if (document.getElementById(e.target.id).closest(".layoutContainer").getAttribute("id") !== "monitorContainer") return prev
+        const subscriberIndex = prev.findIndex((subscriber) => subscriber.id === e.target.id)      
         let sortedSubscribers;
         if (subscriberIndex !== -1) {
           prev[subscriberIndex].audioLevel = e.audioLevel
@@ -81,15 +82,21 @@ function useSubscriber({call, monitor}){
           }
           sortedSubscribers = [...prev, data].sort((a,b) => a.audioLevel < b.audioLevel ? 1 : -1)
         }
+        // filter hidden subscriber
+        let monitorContainer = document.getElementsByClassName("monitorContainer")[0]
+        let inCallSubscriberId;
+        for (let dom of monitorContainer.getElementsByClassName("OT_root")) {
+          if (dom.style.display === "none") inCallSubscriberId = dom.id
+        }
+
+        if (inCallSubscriberId) sortedSubscribers = sortedSubscribers.filter((subscriber) => subscriber.id !== inCallSubscriberId)
+     
         setLoudestSubscriber((prev) => {
-          if (!prev || sortedSubscribers[0].audioLevel > 0.05) return sortedSubscribers[0]
+          if (!prev || (sortedSubscribers.length > 0 &&  sortedSubscribers[0].audioLevel > 0.05)) return sortedSubscribers[0]
           else return prev
         })
         return sortedSubscribers
       })
-
-      return prevMonitorSubscribers
-    })
   }
 
   function updateSoloAudioSubscriber(subscriberId) {
@@ -110,10 +117,8 @@ function useSubscriber({call, monitor}){
 
     let prevLoudestDom = document.getElementsByClassName("loudest")[0];
          
-    // If in a call, clear the loudest className
-    if (mMessage.requestCall && mMessage.requestCall.id || !loudestSubscriber) {
-      if (prevLoudestDom) prevLoudestDom.classList.remove('loudest')
-      return;
+    if (!loudestSubscriber) {
+      return
     }
     
     let currentLoudestDom = document.getElementById(loudestSubscriber.id);
@@ -222,6 +227,8 @@ function useSubscriber({call, monitor}){
     callLayout,
     monitorLayout,
     soloAudioSubscriber,
-    updateSoloAudioSubscriber}
+    loudestSubscriber,
+    updateSoloAudioSubscriber,
+    updateMuteIconVisibility}
 }
 export default useSubscriber;

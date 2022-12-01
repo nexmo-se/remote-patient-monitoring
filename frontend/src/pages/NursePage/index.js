@@ -17,7 +17,6 @@ import clsx from "clsx";
 import User from "entities/user";
 
 const MAX_PUBLISHER_PER_PAGE = process.env.REACT_APP_MAX_PATIENTS_PER_PAGE || 10
-const MAX_PUBLISHER_IN_CALL_PER_PAGE = 3;
 
 function NursePage() {
     const [inCall, setInCall] = useState(false)
@@ -31,7 +30,7 @@ function NursePage() {
     const navigate = useNavigate();
     const mSession = useContext(SessionContext);
     const mMessage = useContext(MessageContext)
-    const mPublisher = usePublisher("callContainer");
+    const mPublisher = usePublisher("nurseContainer");
     const mSubscriber = useSubscriber({ 
       call : "callContainer",
       monitor: "monitorContainer"
@@ -95,10 +94,9 @@ function NursePage() {
         return JSON.parse(connection.data).role === "patient" && (!mMessage.requestCall || connection.id !== mMessage.requestCall.id)
       }).map(connection => connection.id)
 
-      let pubPerPage = mMessage.requestCall && mMessage.requestCall.id ? MAX_PUBLISHER_IN_CALL_PER_PAGE : MAX_PUBLISHER_PER_PAGE;
-      setMaxPageNumber(connectionIds.length/pubPerPage)
+      setMaxPageNumber(connectionIds.length/MAX_PUBLISHER_PER_PAGE)
 
-      const requestConnectionIds = connectionIds.splice(pubPageNumber*pubPerPage, pubPerPage)
+      const requestConnectionIds = connectionIds.splice(pubPageNumber*MAX_PUBLISHER_PER_PAGE, MAX_PUBLISHER_PER_PAGE)
 
       if (mMessage.requestCall && mMessage.requestCall.id) requestConnectionIds.push(mMessage.requestCall.id) 
 
@@ -129,36 +127,46 @@ function NursePage() {
       if (!inCall && mSession.connections.find((connection) => connection.id === mMessage.requestCall.id)) { 
         setInCall(true)
         setPubPageNumber(0)
+        MessageAPI.requestCall(mSession.session, mMessage.requestCall);
       }
       else if (inCall && !mSession.connections.find((connection) => connection.id === mMessage.requestCall.id)) {
         setInCall(false)
         setPubPageNumber(0)
+        MessageAPI.requestCall(mSession.session, new User());
       }
     }, [mSession.connections, mMessage.requestCall])
 
     useEffect(() => {
       if (inCall) {
         mSubscriber.callSubscribers.forEach((subscriber) => {
-        if (subscriber.stream && mMessage.requestCall.id === subscriber.stream.connection.id) subscriber.subscribeToAudio(true)
-        else subscriber.subscribeToAudio(false)
+        if (subscriber.stream && mMessage.requestCall.id === subscriber.stream.connection.id) subscriber.setAudioVolume(100)
+        else subscriber.setAudioVolume(0)
         })
         mSubscriber.monitorSubscribers.forEach((subscriber) => {
-          subscriber.subscribeToAudio(false)
+          subscriber.setAudioVolume(0)
+          mSubscriber.updateMuteIconVisibility(subscriber, null, true)
         })
       }
       else {
         mSubscriber.callSubscribers.forEach((subscriber) => {
-          subscriber.subscribeToAudio(false)
+          subscriber.setAudioVolume(0)
          })
          if (mSubscriber.soloAudioSubscriber) {
           mSubscriber.monitorSubscribers.forEach((subscriber) => {
-            if (subscriber.id === mSubscriber.soloAudioSubscriber.id) subscriber.subscribeToAudio(true)
-            else subscriber.subscribeToAudio(false)
+            if (subscriber.id === mSubscriber.soloAudioSubscriber.id) {
+              subscriber.setAudioVolume(100)
+              mSubscriber.updateMuteIconVisibility(subscriber, null, false)
+            }
+            else {
+              subscriber.setAudioVolume(0)
+              mSubscriber.updateMuteIconVisibility(subscriber, null, true)
+            }
           })
         }
         else {
           mSubscriber.monitorSubscribers.forEach((subscriber) => {
-            subscriber.subscribeToAudio(true)
+            subscriber.setAudioVolume(100) // todo: 100
+            mSubscriber.updateMuteIconVisibility(subscriber, null, false)
          })
         }
       }  
@@ -219,6 +227,9 @@ function NursePage() {
           {maxPageNumber === 0 && !inCall? <h1 className="noPatientMessage">No Patient</h1> : null }
           <div className={clsx("callContainer", (inCall)? "inCall" : "")}>
             <LayoutContainer id="callContainer" size="big"/>
+            <div className="nurseContainer">
+            <LayoutContainer id="nurseContainer" size="big"/>
+            </div>
           </div>
           <div className={clsx("monitorContainer", (inCall)? "inCall" : "")} onClick={onCameraContainerClick} >
             <LayoutContainer id="monitorContainer" size="big"/>

@@ -8,18 +8,27 @@
 #nursePage .callContainer {
     display: none;
     position: relative;
+    margin-left: 16px;
 }
 
 #nursePage .video-action-container {
-    width: 80%;
+    width: 70%;
     height: calc(100% - 80px);
 }
 
 #nursePage .callContainer.inCall {
     display: inline-block;
-    width: 80%;
+    width: 70%;
     height: calc(100% - 140px);
-    margin-bottom: 140px
+    margin-bottom: 140px;
+}
+#nursePage .nurseContainer {
+    position: absolute;
+    width: 210px;
+    height: 160px;
+    left: 4px;
+    bottom: 48px;
+    border: 2px solid white;
 }
 
 #nursePage .monitorContainer {
@@ -35,7 +44,7 @@
 
 #nursePage .monitorContainer.inCall {
     border-style: none;
-    width: 18%;
+    width: 28%;
     height: calc(100% - 140px);
     margin-top: 0px;
     margin-bottom: 140px;
