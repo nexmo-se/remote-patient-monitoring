@@ -1,3 +1,4 @@
+const { neru } = require("neru-alpha");
 const path = require('path');
 require('dotenv').config();
 const express = require("express");
@@ -16,15 +17,27 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "./frontend/build/index.html"));
 });
 
+app.get('/_/health', async (req, res) => {
+  res.sendStatus(200);
+});
+
+
 app.post("/room/:roomName/createSession", async (req, res) => {
   try{
     const { roomName } = req.params ?? 'demoRoom';
-    if (rooms[roomName]) {
-        res.json({roomName: roomName, sessionId: rooms[roomName]})
+    const neruState = neru.getGlobalState();
+
+    const neruRooms = neru.applicationId ? await neruState.hget("rooms", `${roomName}`) : null;
+    if (neruRooms || rooms[roomName]) {
+        res.json({roomName: roomName, sessionId: neruRooms ?? rooms[roomName] })
     }
     else {
         const session = await opentok.createSession()
         rooms[roomName] = session.sessionId;
+        if (neru.applicationId) {
+          await neruState.hset("rooms", { [roomName]: session.sessionId });
+        }
+
         res.json({roomName: roomName, sessionId: session.sessionId})
     }
   }catch(err){

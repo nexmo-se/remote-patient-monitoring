@@ -263,7 +263,7 @@ function NursePage() {
           >
           <button type="submit" style={{display: "none"}}></button>
           </vwc-button>
-          {maxPageNumber > 0 ? <p style={{position: "absolute", bottom: "24px", left: "84px"}}>{`Number of patients: ${mSession.connections.filter((connection) => JSON.parse(connection.data).role === "patient").length}`}</p> : null}
+          {maxPageNumber > 0 ? <p style={{position: "absolute", bottom: "24px", left: "84px"}}>{`Number of patients: ${mSession.streams.filter((stream) => JSON.parse(stream.connection.data).role === "patient").length}`}</p> : null}
           {pubPageNumber > 0 ? <vwc-icon-button onClick={prevPage} connotation="info" shape="circled" layout="outlined" icon="arrow-bold-left-solid" style={{position: "absolute", bottom: "32px", right: "84px"}}></vwc-icon-button> : null}
           {pubPageNumber + 1 < maxPageNumber ?   <vwc-icon-button onClick={nextPage} connotation="info" shape="circled" layout="outlined" icon="arrow-bold-right-solid" style={{position: "absolute", bottom: "32px", right: "24px"}}></vwc-icon-button> : null }
           <StartCallDialog 
