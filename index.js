@@ -27,14 +27,14 @@ app.post("/room/:roomName/createSession", async (req, res) => {
     const { roomName } = req.params ?? 'demoRoom';
     const neruState = neru.getGlobalState();
 
-    const neruRooms = neru.applicationId ? await neruState.hget("rooms", `${roomName}`) : null;
+    const neruRooms = neru.config.apiApplicationId ? await neruState.hget("rooms", `${roomName}`) : null;
     if (neruRooms || rooms[roomName]) {
         res.json({roomName: roomName, sessionId: neruRooms ?? rooms[roomName] })
     }
     else {
         const session = await opentok.createSession()
         rooms[roomName] = session.sessionId;
-        if (neru.applicationId) {
+        if (neru.config.apiApplicationId) {
           await neruState.hset("rooms", { [roomName]: session.sessionId });
         }
 
