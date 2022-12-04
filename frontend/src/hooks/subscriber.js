@@ -20,14 +20,10 @@ function useSubscriber({call, monitor}){
   useEffect(()=> {
     if (!mSession.changedStream) return;
     // Ensure cover the stream that doesnt trigger changedStream event
-    const targetMonitorSubscriber = monitorSubscribers.find((subscriber) =>  
-      mSession.changedStream.stream.id === subscriber.stream.id
-    )
     const targetCallSubscriber = callSubscribers.find((subscriber) => 
       mSession.changedStream.stream.id === subscriber.stream.id
     )
 
-    updateMuteIconVisibility(targetMonitorSubscriber, mSession.changedStream.stream)
     updateMuteIconVisibility(targetCallSubscriber, mSession.changedStream.stream)
 
   }, [mSession.changedStream])

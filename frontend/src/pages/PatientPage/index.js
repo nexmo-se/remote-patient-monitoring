@@ -40,6 +40,10 @@ function PatientPage() {
         }
     }, [mSession.user, mSession.session, navigate])
 
+    useEffect(() => {
+        getLocalStream();
+    }, [])
+
     // publish/unpublish based on nurse's publish request
     useEffect(() => {
       if (!mSession.session) return;
@@ -113,6 +117,14 @@ function PatientPage() {
       MessageAPI.raiseHand(mSession.session, mSession.user);
       setDisableRequestButton(true);
     }
+
+    function getLocalStream() {
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: true })
+        .catch((err) => {
+          console.error(`Fail to get camera and microphone permissions: ${err}`);
+        });
+  }
 
     return (
       <div id="patientPage">

@@ -22,18 +22,6 @@ export default function IndexPage() {
         mSession.joinRoom(e.target.elements["roomName"].value, user)
     }
 
-    function getLocalStream() {
-        navigator.mediaDevices
-          .getUserMedia({ video: true, audio: true })
-          .catch((err) => {
-            console.error(`Fail to get camera and microphone permissions: ${err}`);
-          });
-    }
-
-    useEffect(() => {
-        getLocalStream();
-    }, [])
-
     useEffect(() => {
         if (mSession.session) {
             setIsLoading(false);
