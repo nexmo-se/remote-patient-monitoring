@@ -51,10 +51,6 @@ function PatientPage() {
     }, [mSession.user, mSession.session, navigate])
 
     useEffect(() => {
-        getLocalStream();
-    }, [])
-
-    useEffect(() => {
       let nurse = mSession.connections.find((connection) => JSON.parse(connection.data).role === "nurse")
       if (!nurse && inCall) {
         notify(CALL_ENDED_MESSAGE); setInCall(false);
@@ -127,14 +123,6 @@ function PatientPage() {
       MessageAPI.raiseHand(mSession.session, mSession.user);
       setDisableRequestButton(true);
     }
-
-    function getLocalStream() {
-      navigator.mediaDevices
-        .getUserMedia({ video: true, audio: true })
-        .catch((err) => {
-          console.error(`Fail to get camera and microphone permissions: ${err}`);
-        });
-  }
 
     return (
       <div id="patientPage">
