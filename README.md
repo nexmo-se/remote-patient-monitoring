@@ -26,8 +26,6 @@ You need to setup some environment variables
   - `PORT` -- this variable works only for manual deployment. Heroku deployment will automatically fill the value.
   - `VIDEO_API_API_KEY` -- your Vonage Video API - API Key
   - `VIDEO_API_API_SECRET` -- your Vonage Video API - API Secret
-  - `REACT_APP_MAX_PATIENTS_PER_PAGE` -- Maximum number of patients in a page, this variable works only for manual deployment. 
-
 
 ## Deploy to Heroku
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/nexmo-se/remote-patient-monitoring)

@@ -21,7 +21,7 @@ function PatientPage() {
     const [inCall, setInCall] = useState(false)
     const [openNotification, setOpenNotification] = useState(false)
     const [notificationMessage, setNotificationMessage] = useState(REQUEST_MESSAGE)
-    const [disableRequestButton, setDisableRequestButton] = useState(false)
+    const [disableRequestButton, setDisableRequestButton] = useState(true)
     const [queueNumber, setQueueNumber] = useState(null)
 
     const navigate = useNavigate();
@@ -33,10 +33,20 @@ function PatientPage() {
         monitor: "cameraContainer"
       });
 
+
+    useEffect(() => {
+        window.onpopstate = e => {
+          window.location.reload(true)
+       }
+    },[])
+
     useEffect(() => {
         if (!mSession.user || !mSession.session) {
             navigate('/')
             return;
+        }
+        else if (!mPublisher.publisher) {
+          mPublisher.publish(mSession.user)
         }
     }, [mSession.user, mSession.session, navigate])
 
@@ -44,19 +54,20 @@ function PatientPage() {
         getLocalStream();
     }, [])
 
-    // publish/unpublish based on nurse's publish request
     useEffect(() => {
-      if (!mSession.session) return;
       let nurse = mSession.connections.find((connection) => JSON.parse(connection.data).role === "nurse")
+      if (!nurse && inCall) {
+        notify(CALL_ENDED_MESSAGE); setInCall(false);
+      }
+      else if (nurse && !mMessage.raisedHands.find((raisehand) => raisehand.id === mSession.user.id)) {
+        setDisableRequestButton(false)
+      }
+      else if (!nurse) {
+        setDisableRequestButton(true)
+      }
+    
+    }, [mSession.connections, inCall, mMessage.raisedHands])
 
-      if (mPublisher.publisher && (!nurse || !mMessage.requestPublishConnectionIds.includes(mSession.session.connection.id))) {
-        mPublisher.unpublish()
-        if (inCall) {notify(CALL_ENDED_MESSAGE); setInCall(false);}
-      }
-      else if (nurse && mMessage.requestPublishConnectionIds.includes(mSession.session.connection.id) && !mPublisher.isPublishing && !mPublisher.publisher) {
-        mPublisher.publish(mSession.user); 
-      }
-    }, [ mSession.user, mSession.session, mSession.connections, mMessage.requestPublishConnectionIds, mPublisher, inCall])
 
     useEffect(() => {
       if (mMessage.requestCall && mSession.user && mMessage.requestCall.id === mSession.user.id) {
@@ -85,7 +96,6 @@ function PatientPage() {
       }
       else { 
         setQueueNumber(null) 
-        setDisableRequestButton(false)
       }
 
     }, [mMessage.raisedHands, mSession.user])
@@ -132,7 +142,7 @@ function PatientPage() {
           <>
           <h1 id="monitoring-message">You are now under monitoring...</h1>
           <vwc-button
-            label={disableRequestButton? "Request sent":"Call A Nurse"}
+            label={mMessage.raisedHands.find((raisehand) => raisehand.id === mSession.user.id)? "Request sent":"Call A Nurse"}
             layout="filled"
             shape="pill"
             type="submit"

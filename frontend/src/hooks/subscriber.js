@@ -64,7 +64,8 @@ function useSubscriber({call, monitor}){
   function handleAudioLevelChange(e) {
       setMonitorSubscribersAudioVolume((prev) => {
         // check if it is monitor subscriber
-        if (document.getElementById(e.target.id).closest(".layoutContainer").getAttribute("id") !== "monitorContainer") return prev
+        const targetElemet = document.getElementById(e.target.id);
+        if (targetElemet && targetElemet.closest(".layoutContainer").getAttribute("id") !== "monitorContainer") return prev
         const subscriberIndex = prev.findIndex((subscriber) => subscriber.id === e.target.id)      
         let sortedSubscribers;
         if (subscriberIndex !== -1) {

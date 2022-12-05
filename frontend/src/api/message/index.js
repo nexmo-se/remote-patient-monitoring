@@ -1,17 +1,5 @@
 // @flow
 export default class MessageAPI{
-  static async requestPublish(session, connectionsIds=[]){
-    await new Promise((resolve, reject) => {
-      session.signal({
-        type: "request-publish",
-        data: JSON.stringify(connectionsIds)
-      }, (err) => {
-        if(err) reject(err);
-        else resolve();
-      });
-    })
-  };
-
   static async requestCall(session, user){
     await new Promise((resolve, reject) => {
       session.signal({
@@ -29,6 +17,18 @@ export default class MessageAPI{
       session.signal({
         type: "raise-hand",
         data: JSON.stringify({user})
+      }, (err) => {
+        if(err) reject(err);
+        else resolve();
+      });
+    })
+  };
+
+  static async sendQueueList(session, queueList){
+    await new Promise((resolve, reject) => {
+      session.signal({
+        type: "queue-list",
+        data: JSON.stringify({queueList})
       }, (err) => {
         if(err) reject(err);
         else resolve();

@@ -2,10 +2,10 @@
 import { useState, useEffect, createContext, useContext} from "react";
 import { SessionContext } from "contexts/session";
 import User from 'entities/user';
+import MessageAPI from "api/message";
 
 export const MessageContext = createContext({});
 export default function MessageProvider({ children }){
-  const [ requestPublishConnectionIds, setRequestPublishConnectionIds ] = useState([]);
   const [ requestCall, setRequestCall ] = useState();
   const [ raisedHands, setRaisedHands ] = useState([]);
   const [ lastRaiseHandRequest, setLastRaiseHandRequest ] = useState();
@@ -23,7 +23,14 @@ export default function MessageProvider({ children }){
 
   useEffect(() => {
     let nurse = mSession.connections.find((connection) => JSON.parse(connection.data).role === "nurse")
-    if(!nurse) setRequestCall(false)
+    if(!nurse) {
+      setRequestCall(false)
+      setRaisedHands([])
+    }
+    else {
+      let connectionIds = mSession.connections.map((connection) => connection.id)
+      setRaisedHands((prev) => prev.filter((prevRaiseHand) => connectionIds.includes(prevRaiseHand.id)))
+    }
   }, [mSession.connections])
 
   useEffect(() => {
@@ -36,19 +43,23 @@ export default function MessageProvider({ children }){
         const isExistingUser = prev.find((raisedHand) => {
           return raisedHand.id === user.id
         });
-        if (!isExistingUser) return [...prev, user];
-        else return prev;
+        if (!isExistingUser && JSON.parse(mSession.session.connection.data).role === "nurse") MessageAPI.sendQueueList(mSession.session, [...prev, user]) ;
+        return prev;
       });
     });
 
-    mSession.session.on("signal:request-publish", ({ data }) => {
-      setRequestPublishConnectionIds(JSON.parse(data));    
+    mSession.session.on("signal:queue-list", ({ data }) => {
+      const jsonData = JSON.parse(data);
+      setRaisedHands(jsonData.queueList);
     });
 
     mSession.session.on("signal:request-call", ({ data }) => {
       const jsonData = JSON.parse(data);
       const user = User.fromJSON(jsonData.user);
-      setRequestCall(user);
+      setRequestCall((prev) => {
+        if (user.id !== prev.id ) return user
+        else return prev
+      });
       removeRaisedHand(user)
     });
     mSession.session.on("signal:reject-raise-hand", ({ data }) => {
@@ -61,7 +72,6 @@ export default function MessageProvider({ children }){
 
   return (
     <MessageContext.Provider value={{ 
-      requestPublishConnectionIds,
       requestCall,
       raisedHands,
       lastRaiseHandRequest,

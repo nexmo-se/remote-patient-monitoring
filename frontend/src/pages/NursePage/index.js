@@ -16,16 +16,11 @@ import './styles.css'
 import clsx from "clsx";
 import User from "entities/user";
 
-const MAX_PUBLISHER_PER_PAGE = process.env.REACT_APP_MAX_PATIENTS_PER_PAGE || 10
-
 function NursePage() {
     const [inCall, setInCall] = useState(false)
-    const [requestPublishIds, setRequestPublishIds] = useState([])
     const [openNotification, setOpenNotification] = useState(false)
     const [openStartCallDialog, setOpenStartCallDialog] = useState(false)
     const [openQueueList, setOpenQueueList] = useState(false)
-    const [pubPageNumber, setPubPageNumber] = useState(0)
-    const [maxPageNumber, setMaxPageNumber] = useState(1)
 
     const navigate = useNavigate();
     const mSession = useContext(SessionContext);
@@ -37,6 +32,12 @@ function NursePage() {
     });
 
     useEffect(() => {
+      window.onpopstate = e => {
+        window.location.reload(true)
+     }
+    },[])
+
+    useEffect(() => {
         if (!mSession.user || !mSession.session) {
             navigate('/')
             return;
@@ -45,66 +46,44 @@ function NursePage() {
 
     // Subscribe to all streams
     useEffect(() => {
-        if(mSession.session) {
-          // Filter the stream that is not destroying
-          const streams = mSession.streams.filter((stream) => mMessage.requestPublishConnectionIds.includes(stream.connection.id) )
-          mSubscriber.subscribe(streams);
-        }
-    }, [ mSession.streams, mSession.session, mMessage.requestPublishConnectionIds]);
+        mSubscriber.subscribe(mSession.streams);
+    }, [ mSession.streams]);
 
-      useEffect(() => {
-      // Update callContainer monitorContaner 's children visibility
-      const targetSubscriberInMonitorContainer = mSubscriber.monitorSubscribers.find((subscriber) => subscriber.stream && mMessage.requestCall && mMessage.requestCall.id === subscriber.stream.connection.id)
-      const targetSubscriberInCallContainer = mSubscriber.callSubscribers.find((subscriber) => subscriber.stream && mMessage.requestCall && mMessage.requestCall.id === subscriber.stream.connection.id)
-
-      const callContainer = document.getElementById("callContainer")
-      const callSubscribersDom = Array.from(callContainer.getElementsByClassName('OT_subscriber'));
-
-      const monitorContainer = document.getElementById("monitorContainer")
-      const monitorSubscribersDom = Array.from(monitorContainer.getElementsByClassName('OT_subscriber'));
-
-      callSubscribersDom.forEach((dom) => {
-        dom.style.display = "none"
-      })
-      monitorSubscribersDom.forEach((dom) => {
-        dom.style.display = "block"
-      })
-      if (targetSubscriberInMonitorContainer) {
-        document.getElementById(targetSubscriberInMonitorContainer.id).style.display = "none"
-      }
-      if (targetSubscriberInCallContainer) {
-        document.getElementById(targetSubscriberInCallContainer.id).style.display = "block"
-      }
-      else {
-        const targetStream = mSession.streams.find((stream) => mMessage.requestCall && mMessage.requestCall.id === stream.connection.id)
-        mSubscriber.subscribeSingleStream(targetStream)
-      }
-
-      // delay to ensure style is applied before layout
-      setTimeout(function() {
-        mSubscriber.callLayout.layout()
-        mSubscriber.monitorLayout.layout()
-      }, 2000);
-
-      }, [mMessage.requestCall])
-
-    // Request patient to publish
     useEffect(() => {
-      const connectionIds = mSession.connections.filter((connection) => {
-        return JSON.parse(connection.data).role === "patient" && (!mMessage.requestCall || connection.id !== mMessage.requestCall.id)
-      }).map(connection => connection.id)
+    // Update callContainer monitorContaner 's children visibility
+    const targetSubscriberInMonitorContainer = mSubscriber.monitorSubscribers.find((subscriber) => subscriber.stream && mMessage.requestCall && mMessage.requestCall.id === subscriber.stream.connection.id)
+    const targetSubscriberInCallContainer = mSubscriber.callSubscribers.find((subscriber) => subscriber.stream && mMessage.requestCall && mMessage.requestCall.id === subscriber.stream.connection.id)
 
-      setMaxPageNumber(connectionIds.length/MAX_PUBLISHER_PER_PAGE)
+    const callContainer = document.getElementById("callContainer")
+    const callSubscribersDom = Array.from(callContainer.getElementsByClassName('OT_subscriber'));
 
-      const requestConnectionIds = connectionIds.splice(pubPageNumber*MAX_PUBLISHER_PER_PAGE, MAX_PUBLISHER_PER_PAGE)
+    const monitorContainer = document.getElementById("monitorContainer")
+    const monitorSubscribersDom = Array.from(monitorContainer.getElementsByClassName('OT_subscriber'));
 
-      if (mMessage.requestCall && mMessage.requestCall.id) requestConnectionIds.push(mMessage.requestCall.id) 
+    callSubscribersDom.forEach((dom) => {
+      dom.style.display = "none"
+    })
+    monitorSubscribersDom.forEach((dom) => {
+      dom.style.display = "block"
+    })
+    if (targetSubscriberInMonitorContainer) {
+      document.getElementById(targetSubscriberInMonitorContainer.id).style.display = "none"
+    }
+    if (targetSubscriberInCallContainer) {
+      document.getElementById(targetSubscriberInCallContainer.id).style.display = "block"
+    }
+    else {
+      const targetStream = mSession.streams.find((stream) => mMessage.requestCall && mMessage.requestCall.id === stream.connection.id)
+      mSubscriber.subscribeSingleStream(targetStream)
+    }
 
-      if (requestConnectionIds.length > 0 && requestPublishIds !== requestConnectionIds) {
-        MessageAPI.requestPublish(mSession.session, requestConnectionIds);
-        setRequestPublishIds(requestConnectionIds)
-      }
-    }, [mSession.connections, mSession.session, pubPageNumber, mMessage.requestCall])
+    // delay to ensure style is applied before layout
+    setTimeout(function() {
+      mSubscriber.callLayout.layout()
+      mSubscriber.monitorLayout.layout()
+    }, 2000);
+
+    }, [mMessage.requestCall])
 
     // Adjust number of patient in a page
     useEffect(() => {
@@ -126,12 +105,10 @@ function NursePage() {
       if (!mMessage.requestCall) return;
       if (!inCall && mSession.connections.find((connection) => connection.id === mMessage.requestCall.id)) { 
         setInCall(true)
-        setPubPageNumber(0)
         MessageAPI.requestCall(mSession.session, mMessage.requestCall);
       }
       else if (inCall && !mSession.connections.find((connection) => connection.id === mMessage.requestCall.id)) {
         setInCall(false)
-        setPubPageNumber(0)
         MessageAPI.requestCall(mSession.session, new User());
       }
     }, [mSession.connections, mMessage.requestCall])
@@ -165,12 +142,12 @@ function NursePage() {
         }
         else {
           mSubscriber.monitorSubscribers.forEach((subscriber) => {
-            subscriber.setAudioVolume(100) // todo: 100
+            subscriber.setAudioVolume(100)
             mSubscriber.updateMuteIconVisibility(subscriber, null, false)
          })
         }
       }  
-    }, [mSubscriber.soloAudioSubscriber, inCall, mMessage.requestCall])
+    }, [mSubscriber.soloAudioSubscriber, inCall, mMessage.requestCall, mSubscriber.monitorSubscribers])
 
     // Open notification
     useEffect(() => {
@@ -197,14 +174,6 @@ function NursePage() {
       }
     }
 
-    function nextPage() {
-      setPubPageNumber(pubPageNumber + 1)
-    }
-
-    function prevPage() {
-      setPubPageNumber(pubPageNumber - 1)
-    }
-
     const rejectRaiseHandRequest = useCallback((user) => {
         if (!user) return;
         MessageAPI.rejectRaiseHand(mSession.session, user)
@@ -224,7 +193,7 @@ function NursePage() {
             <InfoBanner message="In Call"></InfoBanner> : 
             <p style={{position: "absolute", top: "16px", left: "24px"}}>{`Subscribed Audio: ${mSubscriber.soloAudioSubscriber ? JSON.parse(mSubscriber.soloAudioSubscriber.stream.connection.data).name: "All"}` }</p>
           }
-          {maxPageNumber === 0 && !inCall? <h1 className="noPatientMessage">No Patient</h1> : null }
+          {mSession.connections.length === 1 && !inCall? <h1 className="noPatientMessage">No Patient</h1> : null }
           <div className={clsx("callContainer", (inCall)? "inCall" : "")}>
             <LayoutContainer id="callContainer" size="big"/>
             <div className="nurseContainer">
@@ -263,9 +232,7 @@ function NursePage() {
           >
           <button type="submit" style={{display: "none"}}></button>
           </vwc-button>
-          {maxPageNumber > 0 ? <p style={{position: "absolute", bottom: "24px", left: "84px"}}>{`Number of patients: ${mSession.streams.filter((stream) => JSON.parse(stream.connection.data).role === "patient").length}`}</p> : null}
-          {pubPageNumber > 0 ? <vwc-icon-button onClick={prevPage} connotation="info" shape="circled" layout="outlined" icon="arrow-bold-left-solid" style={{position: "absolute", bottom: "32px", right: "84px"}}></vwc-icon-button> : null}
-          {pubPageNumber + 1 < maxPageNumber ?   <vwc-icon-button onClick={nextPage} connotation="info" shape="circled" layout="outlined" icon="arrow-bold-right-solid" style={{position: "absolute", bottom: "32px", right: "24px"}}></vwc-icon-button> : null }
+          {mSession.connections.length > 1 ? <p style={{position: "absolute", bottom: "24px", left: "84px"}}>{`Number of patients: ${mSession.streams.filter((stream) => JSON.parse(stream.connection.data).role === "patient").length}`}</p> : null}
           <StartCallDialog 
             open={openStartCallDialog} 
             dismissAction={() => setOpenStartCallDialog(false)}>
