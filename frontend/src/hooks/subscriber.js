@@ -82,8 +82,10 @@ function useSubscriber({call, monitor}){
         // filter hidden subscriber
         let monitorContainer = document.getElementsByClassName("monitorContainer")[0]
         let inCallSubscriberId;
-        for (let dom of monitorContainer.getElementsByClassName("OT_root")) {
-          if (dom.style.display === "none") inCallSubscriberId = dom.id
+        if (monitorContainer) {
+          for (let dom of monitorContainer.getElementsByClassName("OT_root")) {
+            if (dom.style.display === "none") inCallSubscriberId = dom.id
+          }
         }
 
         if (inCallSubscriberId) sortedSubscribers = sortedSubscribers.filter((subscriber) => subscriber.id !== inCallSubscriberId)
@@ -169,7 +171,9 @@ function useSubscriber({call, monitor}){
         }
       })
     });
-    subscriber.on("audioLevelUpdated", handleAudioLevelChange)
+    if (mSession.user.role === "nurse")  {
+      subscriber.on("audioLevelUpdated", handleAudioLevelChange)
+    }
     if (containerId === call) {
       setCallSubscribers((prevSubscribers) => [ ...prevSubscribers, subscriber ]);
     }
