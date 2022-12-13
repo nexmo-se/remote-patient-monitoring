@@ -11,11 +11,13 @@ import Notification from "components/Notification";
 import usePublisher from "hooks/publisher";
 import useSubscriber from "hooks/subscriber";
 import MessageAPI from "api/message";
+import { FaceDetection } from '@mediapipe/face_detection';
 import './styles.css'
 
 const REQUEST_MESSAGE = "A Nurse start a call"
 const REJECT_MESSAGE = "Your request was rejected"
 const CALL_ENDED_MESSAGE = "Nurse left the call"
+const FACE_DETECTION_TIMESTAMP = 2000
 
 function PatientPage() {
     const [inCall, setInCall] = useState(false)
@@ -23,6 +25,10 @@ function PatientPage() {
     const [notificationMessage, setNotificationMessage] = useState(REQUEST_MESSAGE)
     const [disableRequestButton, setDisableRequestButton] = useState(true)
     const [queueNumber, setQueueNumber] = useState(null)
+    const [faceDetectionInterval, setFaceDetectionInterval] = useState()
+    const [faceDetection, setFaceDetection ] = useState()
+    const [isMeExist, setIsMeExist] = useState(true)
+    const [nurseConnections, setNurseConnections] = useState([])
 
     const navigate = useNavigate();
     const mSession = useContext(SessionContext);
@@ -38,6 +44,7 @@ function PatientPage() {
         window.onpopstate = e => {
           window.location.reload(true)
        }
+       setupMediaHelper()
     },[])
 
     useEffect(() => {
@@ -51,18 +58,24 @@ function PatientPage() {
     }, [mSession.user, mSession.session, navigate])
 
     useEffect(() => {
-      let nurse = mSession.connections.find((connection) => JSON.parse(connection.data).role === "nurse")
-      if (!nurse && inCall) {
+      let nurse = mSession.connections.filter((connection) => JSON.parse(connection.data).role === "nurse")
+      if (nurse) setNurseConnections(nurse)
+      else setNurseConnections([])
+
+    }, [mSession.connections])
+
+    useEffect(() => {
+      if (nurseConnections.length === 0 && inCall) {
         notify(CALL_ENDED_MESSAGE); setInCall(false);
       }
-      else if (nurse && !mMessage.raisedHands.find((raisehand) => raisehand.id === mSession.user.id)) {
+      else if (nurseConnections.length > 0 && !mMessage.raisedHands.find((raisehand) => raisehand.id === mSession.user.id)) {
         setDisableRequestButton(false)
       }
-      else if (!nurse) {
+      else if (!nurseConnections.length === 0) {
         setDisableRequestButton(true)
       }
     
-    }, [mSession.connections, inCall, mMessage.raisedHands])
+    }, [nurseConnections, inCall, mMessage.raisedHands])
 
 
     useEffect(() => {
@@ -113,6 +126,64 @@ function PatientPage() {
         mSubscriber.unsubscribe()
       }
     }, [inCall, mSession.streams])
+
+    useEffect(() => {
+      if (mPublisher.publisher) {
+         // send camera image as bitmap
+        if (faceDetectionInterval) {
+          clearInterval(faceDetectionInterval)
+        }
+        const publisherDom = document.getElementById(mPublisher.publisher.id)
+        const publisherVideoDom  = publisherDom.getElementsByTagName('video')[0];
+    
+        const interval = setInterval(async () => {
+          const bitmap = await createImageBitmap(publisherVideoDom)
+          if(faceDetection) {
+            await faceDetection.send({ image: bitmap })
+            .catch(e => {
+              console.log("face detection error: ", e)
+            })
+          }
+        }, FACE_DETECTION_TIMESTAMP);
+        setFaceDetectionInterval(interval)
+      }
+
+    }, [mPublisher.publisher])
+    
+    useEffect(() => {
+      if (!mSession.session) return;
+      if (nurseConnections.length > 0) {
+       MessageAPI.updateUserState(mSession.session, mSession.user, isMeExist)
+      }
+    }, [isMeExist, mSession.session, nurseConnections])
+
+    async function setupMediaHelper() {
+      const detection = new FaceDetection({
+        locateFile: (file) => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/${file}`;
+        },
+      });
+      
+      detection.setOptions({
+        selfieMode: true,
+        model: 'short',
+        minDetectionConfidence: 0.7,
+      });
+      
+      detection.onResults(onResults);
+      await detection.initialize();
+      setFaceDetection(detection)
+    }
+
+    function onResults(results) {
+      if (results.detections.length > 0) {
+        setIsMeExist(true)
+      }
+      else {
+        setIsMeExist(false)
+      }
+    }
+    
 
     function notify(message) {
       setNotificationMessage(message)

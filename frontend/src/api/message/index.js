@@ -47,4 +47,16 @@ export default class MessageAPI{
       });
     })
   };
+
+  static async updateUserState(session, user, state){
+    await new Promise((resolve, reject) => {
+      session.signal({
+        type: "user-state",
+        data: JSON.stringify({user, state})
+      }, (err) => {
+        if(err) reject(err);
+        else resolve();
+      });
+    })
+  };
 }

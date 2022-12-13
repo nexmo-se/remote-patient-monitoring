@@ -11,7 +11,7 @@
     margin-left: 16px;
 }
 
-#nursePage .video-action-container {
+#nursePage .videoCallControls {
     width: 53%;
     height: calc(100% - 80px);
 }
@@ -59,7 +59,25 @@
 }
 
 #nursePage .monitorContainer .OT_root.loudest {
-    border-color: rgb(187,30,137);
+    border-color: rgb(28,135,49); 
+}
+
+#nursePage .monitorContainer .OT_root.missing,
+#nursePage .monitorContainer .OT_root.loudest.missing {
+    animation: blink-animation 1s steps(5, start) infinite;
+    -webkit-animation: blink-animation 1s steps(5, start) infinite;
+    border-color: rgb(230,29,29)
+}
+
+@keyframes blink-animation {
+    to {
+        border-color: transparent;
+    }
+}
+@-webkit-keyframes blink-animation {
+    to {
+        border-color: rgb(230,29,29); 
+    }
 }
 
 #nursePage .noPatientMessage {

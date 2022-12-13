@@ -132,6 +132,27 @@ function useSubscriber({call, monitor}){
     if (currentLoudestDom && !currentLoudestDom.classList.contains("loudest")) currentLoudestDom.classList.add("loudest")
 
   },[loudestSubscriber, mSession.user, mMessage.requestCall, soloAudioSubscriber])
+
+  useEffect(() => {
+    if (!mSession.user || mSession.user.role !== "nurse") return;
+    let prevMissingSubscriberDom = document.querySelectorAll(".missing");
+    // Get corresponding subscriber ids
+    const missingSubscribers = monitorSubscribers.filter((subscriber) => mMessage.missingUsers.find((user) => {
+      return user.id === subscriber.stream.connection.id
+    }))
+
+    prevMissingSubscriberDom.forEach((subscriberDom) => {
+      // find corresponding monitor subscriber id
+      if (!missingSubscribers.find((subscriber) => subscriberDom.id === subscriber.id)) {
+        subscriberDom.classList.remove('missing')
+      }
+    })
+
+    missingSubscribers.forEach((subscriber) => {
+      let missingUserDom = document.getElementById(subscriber.id)
+      if (missingUserDom && !missingUserDom.classList.contains("missing")) missingUserDom.classList.add("missing")
+    })
+  }, [mSession.user, mMessage.missingUsers, monitorSubscribers])
   
   function unsubscribe() {
     callSubscribers.forEach((subscriber) => {

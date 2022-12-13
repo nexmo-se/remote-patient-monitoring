@@ -9,6 +9,7 @@ import VideoControl from "components/VideoControl";
 import InfoBanner from "components/InfoBanner";
 import Notification from "components/Notification";
 import QueueListDrawer from "components/QueueListDrawer";
+import AlarmControl from "components/AlarmControl";
 import useSubscriber from "hooks/subscriber";
 import usePublisher from "hooks/publisher";
 import MessageAPI from "api/message";
@@ -21,7 +22,9 @@ function NursePage() {
     const [openNotification, setOpenNotification] = useState(false)
     const [openStartCallDialog, setOpenStartCallDialog] = useState(false)
     const [openQueueList, setOpenQueueList] = useState(false)
-
+    const [alarmActionsPosition, setAlarmActionsPosition] = useState({display: "none"})
+    const [selectedUser, setSelectedUser] = useState()
+    
     const navigate = useNavigate();
     const mSession = useContext(SessionContext);
     const mMessage = useContext(MessageContext)
@@ -156,7 +159,31 @@ function NursePage() {
       }
     }, [mMessage.lastRaiseHandRequest])
 
-    function onCameraContainerClick(e) {
+    useEffect(() => {
+      let monitorSubscribersDom = document.getElementById("monitorContainer")
+      let videosDoms = monitorSubscribersDom.querySelectorAll(".OT_root")
+
+      videosDoms.forEach((video) => {
+        video.addEventListener("mouseenter", showAlarmAction)
+        video.addEventListener("mouseleave", hideAlarmAction)
+      })
+
+      return () => {
+        videosDoms.forEach((video) => {
+          video.removeEventListener("mouseenter", showAlarmAction)
+          video.removeEventListener("mouseleave", hideAlarmAction)
+        })
+      }
+
+    }, [mSubscriber.monitorSubscribers])
+
+    useEffect(() => {
+      if (selectedUser && !mMessage.missingUsers.find((user) => user.id === selectedUser.id)) {
+        removeAlarmVisibility()
+      }
+    }, [mMessage.missingUsers, selectedUser])
+
+    function setSoloAudio(e) {
       const targetDom = e.target.closest(".OT_root")
       if (!targetDom || inCall) return;
   
@@ -174,20 +201,60 @@ function NursePage() {
       }
     }
 
-    const rejectRaiseHandRequest = useCallback((user) => {
+    const rejectUser = useCallback((user) => {
         if (!user) return;
         MessageAPI.rejectRaiseHand(mSession.session, user)
     }, [mSession.session])
 
-    const acceptRaiseHandRequest = useCallback((user, forceEndCall=false) => {
+    const callUser = useCallback(async (user, forceEndCall=false) => {
       if (!user) return;
       if (forceEndCall || !inCall) {
-        MessageAPI.requestCall(mSession.session, user)
+        await MessageAPI.requestCall(mSession.session, user)
       }
     }, [inCall])
 
+    const showAlarmAction = useCallback((e) => {
+      const targetDom = e.target.closest(".OT_root")
+      if (!targetDom || !targetDom.classList.contains("missing")) {
+        removeAlarmVisibility()
+        return;
+      }
+
+      let style = {
+        display: "block",
+        position: "absolute",
+        left: `${targetDom.offsetLeft + 8}px`,
+        top: `${targetDom.offsetTop + targetDom.offsetHeight - 56}px`,
+        backgroundColor: "rgb(255,255,255,0.3)",
+        padding: "4px 12px"
+      }
+      const subscriber = mSubscriber.monitorSubscribers.find((subscriber) => subscriber.id === targetDom.id)
+      if (subscriber && subscriber.stream) {
+        let user = JSON.parse(subscriber.stream.connection.data)
+        setSelectedUser(new User(user.name, user.role, subscriber.stream.connection.id))
+      }
+      
+      setAlarmActionsPosition(style)
+    },[mSubscriber.monitorSubscribers])
+
+ 
+    const hideAlarmAction =  useCallback((e) => {
+      if (!e.toElement || e.toElement.classList.contains("alarm-control") || e.toElement.id === "mute-notification-button" || e.toElement.id === "call-button") return;
+   
+      setSelectedUser(null)
+      removeAlarmVisibility()
+    }, [])
+
+    
+    function removeAlarmVisibility() {
+      let style = {
+        display: "none"
+      }
+      setAlarmActionsPosition(style)
+    }
+
     return (
-      <QueueListDrawer open={openQueueList} hideDrawer={hideDrawer} acceptCall={acceptRaiseHandRequest} rejectCall={rejectRaiseHandRequest}>
+      <QueueListDrawer open={openQueueList} hideDrawer={hideDrawer} acceptCall={callUser} rejectCall={rejectUser}>
       <div id="nursePage">
           {inCall? 
             <InfoBanner message="In Call"></InfoBanner> : 
@@ -200,11 +267,12 @@ function NursePage() {
             <LayoutContainer id="nurseContainer" size="big"/>
             </div>
           </div>
-          <div className={clsx("monitorContainer", (inCall)? "inCall" : "")} onClick={onCameraContainerClick} >
+          <div className={clsx("monitorContainer", (inCall)? "inCall" : "")} onClick={setSoloAudio}>
             <LayoutContainer id="monitorContainer" size="big"/>
+            <AlarmControl style={alarmActionsPosition} selectedUser={selectedUser} acceptCall={callUser} closeAlarm={removeAlarmVisibility}></AlarmControl>
           </div>
           {mPublisher.publisher? (
-            <VideoHoverContainer className="video-action-container">
+            <VideoHoverContainer className="videoCallControls">
               <VideoControl 
                 publisher={mPublisher.publisher} 
                 unpublish={mPublisher.unpublish}
@@ -242,9 +310,9 @@ function NursePage() {
             title="Call Request"
             message={mMessage.lastRaiseHandRequest ? `Patient: ${mMessage.lastRaiseHandRequest.name} raised a call request` : ""}
             okText={inCall ? "Add to Queue" : "Accept"}
-            okAction={() => acceptRaiseHandRequest(mMessage.lastRaiseHandRequest)}
+            okAction={() => callUser(mMessage.lastRaiseHandRequest)}
             cancelText="Reject"
-            cancelAction={() => rejectRaiseHandRequest(mMessage.lastRaiseHandRequest)}
+            cancelAction={() => rejectUser(mMessage.lastRaiseHandRequest)}
             dismissAction={() => setOpenNotification(false)}
           ></Notification>
       </div>

@@ -4,6 +4,8 @@ import '@vonage/vwc-tooltip';
 import Hangup from "./components/Hangup";
 import Mute from "./components/Mute";
 import Video from "./components/Video";
+import Call from "./components/Call";
+import MuteAlarm from "./components/MuteAlarm";
 import './styles.css';
 
 function ControlButton({isActive, activeIcon, inActiveIcon, tooltipName, tooltipTitle, onClick, ...props}) {
@@ -40,4 +42,7 @@ function ControlButton({isActive, activeIcon, inActiveIcon, tooltipName, tooltip
 ControlButton.Hangup = Hangup;
 ControlButton.Mute = Mute;
 ControlButton.Video = Video;
+ControlButton.Call = Call;
+ControlButton.MuteAlarm = MuteAlarm
+
 export default ControlButton;

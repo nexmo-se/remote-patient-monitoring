@@ -10,6 +10,8 @@ export default function MessageProvider({ children }){
   const [ raisedHands, setRaisedHands ] = useState([]);
   const [ lastRaiseHandRequest, setLastRaiseHandRequest ] = useState();
   const [ rejectedRequest, setRejectedRequest ] = useState();
+  const [ missingUsers, setMissingUsers ] = useState([]);
+
   const mSession = useContext(SessionContext);;
 
   function removeRaisedHand(user) {
@@ -21,6 +23,15 @@ export default function MessageProvider({ children }){
     );
   }
 
+  function removeMissingUser(user) {
+    if (!user) return;
+    setMissingUsers((prevMissingUsers) =>
+    prevMissingUsers.filter((prevMissingUser) => {
+      return prevMissingUser.id !== user.id;
+    })
+  );
+  }
+
   useEffect(() => {
     let nurse = mSession.connections.find((connection) => JSON.parse(connection.data).role === "nurse")
     if(!nurse) {
@@ -30,6 +41,7 @@ export default function MessageProvider({ children }){
     else {
       let connectionIds = mSession.connections.map((connection) => connection.id)
       setRaisedHands((prev) => prev.filter((prevRaiseHand) => connectionIds.includes(prevRaiseHand.id)))
+      setMissingUsers((prev) => prev.filter((prevMissingUser) => connectionIds.includes(prevMissingUser.id)))
     }
   }, [mSession.connections])
 
@@ -62,11 +74,28 @@ export default function MessageProvider({ children }){
       });
       removeRaisedHand(user)
     });
+
     mSession.session.on("signal:reject-raise-hand", ({ data }) => {
       const jsonData = JSON.parse(data);
       const user = User.fromJSON(jsonData.user);
       removeRaisedHand(user)
       setRejectedRequest(user)
+    });
+
+    mSession.session.on("signal:user-state", ({ data }) => {
+      const jsonData = JSON.parse(data);
+      const user = User.fromJSON(jsonData.user);
+      const isUserExistInCamera = jsonData.state;
+      setMissingUsers((prev) => {
+        if (!isUserExistInCamera) {
+          const isExistingMissingUser = prev.find((prevUser) => {
+            return prevUser.id === user.id
+          });
+          if (!isExistingMissingUser) return [...prev, user] ;
+          return prev;
+        }
+        return prev.filter((prevUser) => prevUser.id !== user.id)
+      })
     });
   }, [ mSession.session ])
 
@@ -75,7 +104,9 @@ export default function MessageProvider({ children }){
       requestCall,
       raisedHands,
       lastRaiseHandRequest,
-      rejectedRequest
+      rejectedRequest,
+      missingUsers,
+      removeMissingUser
     }}>
       {children}
     </MessageContext.Provider>
