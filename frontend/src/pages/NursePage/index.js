@@ -261,7 +261,7 @@ function NursePage() {
       <div id="nursePage">
           {inCall? 
             <InfoBanner message="In Call"></InfoBanner> : 
-            <p style={{position: "absolute", top: "16px", left: "24px"}}>{`Subscribed Audio: ${mSubscriber.soloAudioSubscriber ? JSON.parse(mSubscriber.soloAudioSubscriber.stream.connection.data).name: "All"}` }</p>
+            <p style={{position: "absolute", top: "16px", left: "24px"}}>{`Subscribed Audio: ${mSubscriber.soloAudioSubscriber && mSubscriber.soloAudioSubscriber.stream ? JSON.parse(mSubscriber.soloAudioSubscriber.stream.connection.data).name: "All"}` }</p>
           }
           {mSession.connections.length === 1 && !inCall? <h1 className="noPatientMessage">No Patient</h1> : null }
           <div className={clsx("callContainer", (inCall)? "inCall" : "")}>

@@ -75,6 +75,7 @@ function useSubscriber({call, monitor}){
         else {
           const data = {
             id: e.target.id,
+            subscriber: e.target,
             audioLevel: e.audioLevel
           }
           sortedSubscribers = [...prev, data].sort((a,b) => a.audioLevel < b.audioLevel ? 1 : -1)
@@ -222,6 +223,15 @@ function useSubscriber({call, monitor}){
         return prevSubscribers.filter((subscriber) => {
           return !!subscriber.stream
         })
+      })
+      setMonitorSubscribersAudioVolume((prevSubscribers) => {
+        return prevSubscribers.filter((prev) => {
+          return !!prev.subscriber.stream
+        })
+      })
+      setSoloAudioSubscriber((prevSubscriber) => {
+        if (prevSubscriber && !prevSubscriber.stream) return null
+        else return prevSubscriber
       })
     })
 
