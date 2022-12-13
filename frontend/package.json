@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@mediapipe/face_detection": "^0.4.1646425229",
+    "@mediapipe/holistic": "^0.5.1635989137",
     "@opentok/client": "^2.23.7",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",

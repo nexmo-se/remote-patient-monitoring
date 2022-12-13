@@ -11,7 +11,8 @@ import Notification from "components/Notification";
 import usePublisher from "hooks/publisher";
 import useSubscriber from "hooks/subscriber";
 import MessageAPI from "api/message";
-import { FaceDetection } from '@mediapipe/face_detection';
+// import { faceDetection } from '@mediapipe/face_detection';
+import { Holistic } from '@mediapipe/holistic';
 import './styles.css'
 
 const REQUEST_MESSAGE = "A Nurse start a call"
@@ -158,16 +159,26 @@ function PatientPage() {
     }, [isMeExist, mSession.session, nurseConnections])
 
     async function setupMediaHelper() {
-      const detection = new FaceDetection({
-        locateFile: (file) => {
-          return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/${file}`;
-        },
-      });
+      /** Face Only detection **/
+      // const detection = new FaceDetection({
+      //   locateFile: (file) => {
+      //     return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/${file}`;
+      //   },
+      // });
+      // detection.setOptions({
+      // selfieMode: true,
+      // model: 'short',
+      // minDetectionConfidence: 0.7,
+      // });
+
+      const detection = new Holistic({locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
+      }});
       
       detection.setOptions({
-        selfieMode: true,
-        model: 'short',
-        minDetectionConfidence: 0.7,
+        staticImageMode: true,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
       });
       
       detection.onResults(onResults);
@@ -176,7 +187,8 @@ function PatientPage() {
     }
 
     function onResults(results) {
-      if (results.detections.length > 0) {
+      // if (results.detections.length > 0) { // For Face Only detection
+      if (results.faceLandmarks || results.leftHandLandmarks || results.rightHandLandmarks) {
         setIsMeExist(true)
       }
       else {
