@@ -9,7 +9,7 @@ function AlarmControl ({selectedUser, acceptCall, closeAlarm, ...props}) {
     async function callPatient(e) {
         if (!selectedUser) return;
         closeAlarm()
-        await acceptCall(selectedUser, true)
+        acceptCall(selectedUser, true)
     }
 
     function muteAlarm(e) {

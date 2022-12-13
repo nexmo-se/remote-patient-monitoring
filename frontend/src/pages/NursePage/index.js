@@ -53,6 +53,9 @@ function NursePage() {
     }, [ mSession.streams]);
 
     useEffect(() => {
+    // Remove user from missingUsers list
+    if (mMessage.requestCall) mMessage.removeMissingUser(mMessage.requestCall)
+
     // Update callContainer monitorContaner 's children visibility
     const targetSubscriberInMonitorContainer = mSubscriber.monitorSubscribers.find((subscriber) => subscriber.stream && mMessage.requestCall && mMessage.requestCall.id === subscriber.stream.connection.id)
     const targetSubscriberInCallContainer = mSubscriber.callSubscribers.find((subscriber) => subscriber.stream && mMessage.requestCall && mMessage.requestCall.id === subscriber.stream.connection.id)
