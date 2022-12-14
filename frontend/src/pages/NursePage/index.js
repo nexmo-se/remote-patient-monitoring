@@ -229,7 +229,8 @@ function NursePage() {
         left: `${targetDom.offsetLeft + 8}px`,
         top: `${targetDom.offsetTop + targetDom.offsetHeight - 56}px`,
         backgroundColor: "rgb(255,255,255,0.3)",
-        padding: "4px 12px"
+        padding: "4px 12px",
+        zIndex: 3
       }
       const subscriber = mSubscriber.monitorSubscribers.find((subscriber) => subscriber.id === targetDom.id)
       if (subscriber && subscriber.stream) {
