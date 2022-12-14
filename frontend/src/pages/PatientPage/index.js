@@ -11,14 +11,14 @@ import Notification from "components/Notification";
 import usePublisher from "hooks/publisher";
 import useSubscriber from "hooks/subscriber";
 import MessageAPI from "api/message";
-// import { faceDetection } from '@mediapipe/face_detection';
+// import { FaceDetection } from '@mediapipe/face_detection';
 import { Holistic } from '@mediapipe/holistic';
 import './styles.css'
 
 const REQUEST_MESSAGE = "A Nurse start a call"
 const REJECT_MESSAGE = "Your request was rejected"
 const CALL_ENDED_MESSAGE = "Nurse left the call"
-const HOLISTIC_DETECTION_TIMESTAMP = 2000
+const HUMAN_DETECTION_TIMESTAMP = 2000
 
 function PatientPage() {
     const [inCall, setInCall] = useState(false)
@@ -26,8 +26,8 @@ function PatientPage() {
     const [notificationMessage, setNotificationMessage] = useState(REQUEST_MESSAGE)
     const [disableRequestButton, setDisableRequestButton] = useState(true)
     const [queueNumber, setQueueNumber] = useState(null)
-    const [holisticDetectionInterval, setHolisticDetectionInterval] = useState()
-    const [holisticDetection, setHolisticDetection ] = useState()
+    const [humanDetectionInterval, setHumanDetectionInterval] = useState()
+    const [humanDetection, setHumanDetection ] = useState()
     const [isMeExist, setIsMeExist] = useState(true)
     const [nurseConnectionIds, setNurseConnectionIds] = useState([])
 
@@ -132,27 +132,24 @@ function PatientPage() {
     }, [inCall, mSession.streams])
 
     useEffect(() => {
-      if (mPublisher.publisher) {
+      if (mPublisher.publisher && humanDetection) {
          // send camera image as bitmap
-        if (holisticDetectionInterval) {
-          clearInterval(holisticDetectionInterval)
+        if (humanDetectionInterval) {
+          clearInterval(humanDetectionInterval)
         }
         const publisherDom = document.getElementById(mPublisher.publisher.id)
         const publisherVideoDom  = publisherDom.getElementsByTagName('video')[0];
-    
+
         const interval = setInterval(async () => {
           const bitmap = await createImageBitmap(publisherVideoDom)
-          if(holisticDetection) {
-            await holisticDetection.send({ image: bitmap })
+            humanDetection.send({ image: bitmap })
             .catch(e => {
               console.log("detection error: ", e)
             })
-          }
-        }, HOLISTIC_DETECTION_TIMESTAMP);
-        setHolisticDetectionInterval(interval)
+          }, HUMAN_DETECTION_TIMESTAMP);
+          setHumanDetectionInterval(interval)
       }
-
-    }, [mPublisher.publisher])
+    }, [mPublisher.publisher, humanDetection])
     
     useEffect(() => {
       if (!mSession.session) return;
@@ -175,7 +172,7 @@ function PatientPage() {
       // });
 
       const detection = new Holistic({locateFile: (file) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic@0.5.1635989137/${file}`;
       }});
       
       detection.setOptions({
@@ -186,7 +183,7 @@ function PatientPage() {
       
       detection.onResults(onResults);
       await detection.initialize();
-      setHolisticDetection(detection)
+      setHumanDetection(detection)
     }
 
     function onResults(results) {
