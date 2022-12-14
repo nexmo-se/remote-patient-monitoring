@@ -18,7 +18,7 @@ import './styles.css'
 const REQUEST_MESSAGE = "A Nurse start a call"
 const REJECT_MESSAGE = "Your request was rejected"
 const CALL_ENDED_MESSAGE = "Nurse left the call"
-const FACE_DETECTION_TIMESTAMP = 2000
+const HOLISTIC_DETECTION_TIMESTAMP = 2000
 
 function PatientPage() {
     const [inCall, setInCall] = useState(false)
@@ -26,10 +26,10 @@ function PatientPage() {
     const [notificationMessage, setNotificationMessage] = useState(REQUEST_MESSAGE)
     const [disableRequestButton, setDisableRequestButton] = useState(true)
     const [queueNumber, setQueueNumber] = useState(null)
-    const [faceDetectionInterval, setFaceDetectionInterval] = useState()
-    const [faceDetection, setFaceDetection ] = useState()
+    const [holisticDetectionInterval, setHolisticDetectionInterval] = useState()
+    const [holisticDetection, setHolisticDetection ] = useState()
     const [isMeExist, setIsMeExist] = useState(true)
-    const [nurseConnections, setNurseConnections] = useState([])
+    const [nurseConnectionIds, setNurseConnectionIds] = useState([])
 
     const navigate = useNavigate();
     const mSession = useContext(SessionContext);
@@ -59,25 +59,28 @@ function PatientPage() {
     }, [mSession.user, mSession.session, navigate])
 
     useEffect(() => {
-      let nurse = mSession.connections.filter((connection) => JSON.parse(connection.data).role === "nurse")
-      if (nurse) setNurseConnections(nurse)
-      else setNurseConnections([])
+      let nurseConnectionIds = mSession.connections.filter((connection) => JSON.parse(connection.data).role === "nurse").map((connection) => connection.id)
+      setNurseConnectionIds( (prevConnectionIds) => {
+        if (prevConnectionIds.sort().toString() !== nurseConnectionIds.sort().toString()) {
+          return nurseConnectionIds
+        }
+        return prevConnectionIds
+      })
 
     }, [mSession.connections])
 
     useEffect(() => {
-      if (nurseConnections.length === 0 && inCall) {
+      if (nurseConnectionIds.length === 0 && inCall) {
         notify(CALL_ENDED_MESSAGE); setInCall(false);
       }
-      else if (nurseConnections.length > 0 && !mMessage.raisedHands.find((raisehand) => raisehand.id === mSession.user.id)) {
+      else if (nurseConnectionIds.length > 0 && !mMessage.raisedHands.find((raisehand) => raisehand.id === mSession.user.id)) {
         setDisableRequestButton(false)
       }
-      else if (!nurseConnections.length === 0) {
+      else if (nurseConnectionIds.length === 0) {
         setDisableRequestButton(true)
       }
     
-    }, [nurseConnections, inCall, mMessage.raisedHands])
-
+    }, [nurseConnectionIds, inCall, mMessage.raisedHands])
 
     useEffect(() => {
       if (mMessage.requestCall && mSession.user && mMessage.requestCall.id === mSession.user.id) {
@@ -131,32 +134,32 @@ function PatientPage() {
     useEffect(() => {
       if (mPublisher.publisher) {
          // send camera image as bitmap
-        if (faceDetectionInterval) {
-          clearInterval(faceDetectionInterval)
+        if (holisticDetectionInterval) {
+          clearInterval(holisticDetectionInterval)
         }
         const publisherDom = document.getElementById(mPublisher.publisher.id)
         const publisherVideoDom  = publisherDom.getElementsByTagName('video')[0];
     
         const interval = setInterval(async () => {
           const bitmap = await createImageBitmap(publisherVideoDom)
-          if(faceDetection) {
-            await faceDetection.send({ image: bitmap })
+          if(holisticDetection) {
+            await holisticDetection.send({ image: bitmap })
             .catch(e => {
-              console.log("face detection error: ", e)
+              console.log("detection error: ", e)
             })
           }
-        }, FACE_DETECTION_TIMESTAMP);
-        setFaceDetectionInterval(interval)
+        }, HOLISTIC_DETECTION_TIMESTAMP);
+        setHolisticDetectionInterval(interval)
       }
 
     }, [mPublisher.publisher])
     
     useEffect(() => {
       if (!mSession.session) return;
-      if (nurseConnections.length > 0) {
+      if (nurseConnectionIds.length > 0) {
        MessageAPI.updateUserState(mSession.session, mSession.user, isMeExist)
       }
-    }, [isMeExist, mSession.session, nurseConnections])
+    }, [isMeExist, mSession.session, nurseConnectionIds])
 
     async function setupMediaHelper() {
       /** Face Only detection **/
@@ -183,7 +186,7 @@ function PatientPage() {
       
       detection.onResults(onResults);
       await detection.initialize();
-      setFaceDetection(detection)
+      setHolisticDetection(detection)
     }
 
     function onResults(results) {
