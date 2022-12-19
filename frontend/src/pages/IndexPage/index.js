@@ -84,7 +84,15 @@ export default function IndexPage() {
                 >
                 <button type="submit" style={{display: "none"}}></button>
             </vwc-button>
-        </form>   
+        </form>
+        <p>Please make sure you enter the same room name as all other users who are testing with you.</p>
+        <p>Reference: <a
+            href="https://docs.google.com/presentation/d/1S8llLIrRGUWmsPukd5DgBfxqlo6NojK6He7IRzHAi6k/edit?usp=sharing"
+            target="_blank"
+            rel="noreferrer">
+            Remote Patient Monitoring doc.
+        </a>
+        </p>
         </>     
     )
     }
