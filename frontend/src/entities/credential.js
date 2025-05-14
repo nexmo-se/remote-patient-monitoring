@@ -1,8 +1,8 @@
 // @flow
 class Credential{
   
-    constructor(apiKey = '', sessionId = '', token = ''){
-      this.apiKey = apiKey;
+    constructor(appId = '', sessionId = '', token = ''){
+      this.appId = appId;
       this.sessionId = sessionId;
       this.token = token;
     }

@@ -12,7 +12,7 @@ export default class CredentialAPI{
     })).json();
     
     if (!jsonResult.token) return null;
-    const credential = new Credential(jsonResult.apiKey, jsonResult.sessionId, jsonResult.token);
+    const credential = new Credential(jsonResult.appId, jsonResult.sessionId, jsonResult.token);
     return credential;
   }
 }

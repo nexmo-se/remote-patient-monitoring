@@ -4,10 +4,10 @@
   "private": true,
   "dependencies": {
     "@mediapipe/holistic": "^0.5.1635989137",
-    "@opentok/client": "^2.23.7",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@vonage/client-sdk-video": "^2.30.0",
     "@vonage/vivid": "^2.36.1",
     "clsx": "^1.2.1",
     "delay": "^5.0.0",
@@ -21,7 +21,7 @@
   },
   "scripts": {
     "start": "GENERATE_SOURCEMAP=false react-scripts start",
-    "build": "env-cmd -f ../.env react-scripts build",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

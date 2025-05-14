@@ -2,7 +2,7 @@
 import { useState, createContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { v4 as uuid } from "uuid";
-import OT from "@opentok/client";
+import OT from "@vonage/client-sdk-video";
 import RoomAPI from "api/room";
 import CredentialAPI from "api/credential";
 import User from "entities/user";
@@ -44,7 +44,7 @@ function SessionProvider({ children }){
 
   async function connect(credential){
     try{
-      let newSession = OT.initSession(credential.apiKey, credential.sessionId); 
+      let newSession = OT.initSession(credential.appId, credential.sessionId);
 
       newSession.on("streamPropertyChanged", handleStreamPropertyChanged);
       newSession.on("streamCreated", (e) => handleStreamCreated(e));

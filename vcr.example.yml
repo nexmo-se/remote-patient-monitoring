@@ -1,0 +1,16 @@
+project:
+    name: remote-patient-monitoring
+instance:
+    name: dev
+    runtime: nodejs16
+    region: aws.use1
+    application-id: ""
+    entrypoint:
+        - node
+        - index.js
+debug:
+    name: debug
+    entrypoint:
+        - nodemon
+        - --inspect
+        - index.js

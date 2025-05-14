@@ -1,7 +1,7 @@
 // @flow
 import { useState, useEffect, useContext } from "react";
 import LayoutManager from "utils/layout-manager";
-import OT from "@opentok/client";
+import OT from "@vonage/client-sdk-video";
 import delay from "delay";
 import { SessionContext } from "contexts/session";
 
