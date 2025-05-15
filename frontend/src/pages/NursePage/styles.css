@@ -37,9 +37,9 @@
     background-color: black;
     position: relative;
     width: 100%;
-    height: calc(100% - 160px);
+    height: calc(100% - 180px);
     margin-top: 80px;
-    margin-bottom: 80px;
+    margin-bottom: 100px;
 }
 
 #nursePage .monitorContainer.inCall {

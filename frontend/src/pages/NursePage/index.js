@@ -6,6 +6,7 @@ import StartCallDialog from "components/StartCallDialog";
 import LayoutContainer from "components/LayoutContainer";
 import VideoHoverContainer from 'components/VideoHoverContainer';
 import VideoControl from "components/VideoControl";
+import MonitoringControl from "components/MonitoringControl";
 import InfoBanner from "components/InfoBanner";
 import Notification from "components/Notification";
 import QueueListDrawer from "components/QueueListDrawer";
@@ -282,7 +283,11 @@ function NursePage() {
                 unpublish={mPublisher.unpublish}
               />
             </VideoHoverContainer>
-          ): null}
+          ):
+            <div style={{position: "absolute", bottom: "32px", right: "64px"}}>
+              <MonitoringControl />
+            </div>
+          }
           <vwc-icon-button 
           icon="receptionist-solid" 
           layout="filled"

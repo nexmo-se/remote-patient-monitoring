@@ -11,8 +11,13 @@ import Notification from "components/Notification";
 import usePublisher from "hooks/publisher";
 import useSubscriber from "hooks/subscriber";
 import MessageAPI from "api/message";
-// import { FaceDetection } from '@mediapipe/face_detection';
-import { Holistic } from '@mediapipe/holistic';
+import OT from "@vonage/client-sdk-video";
+import { MonitorType } from "utils/constants";
+import { MediaProcessorConnector} from '@vonage/media-processor'
+import MediaProcessorHelperWorker from "helpers/MediaProcessorHelperWorker";
+import * as cocoSsd from '@tensorflow-models/coco-ssd';
+import * as tf from '@tensorflow/tfjs';
+
 import './styles.css'
 
 const REQUEST_MESSAGE = "A Nurse start a call"
@@ -27,7 +32,6 @@ function PatientPage() {
     const [disableRequestButton, setDisableRequestButton] = useState(true)
     const [queueNumber, setQueueNumber] = useState(null)
     const [humanDetectionInterval, setHumanDetectionInterval] = useState()
-    const [humanDetection, setHumanDetection ] = useState()
     const [isMeExist, setIsMeExist] = useState(true)
     const [nurseConnectionIds, setNurseConnectionIds] = useState([])
 
@@ -40,13 +44,25 @@ function PatientPage() {
         monitor: "cameraContainer"
       });
 
+    let mediaProcessor = null
 
     useEffect(() => {
         window.onpopstate = e => {
           window.location.reload(true)
        }
-       setupMediaHelper()
     },[])
+
+    useEffect(() => {
+      if(mPublisher.stream) {
+        setupMediaHelper()
+      }
+    }, [mPublisher.stream])
+
+    // useEffect(() => {
+    //   if (mediaProcessor) {
+    //     changeTransformType(mMessage.monitoringType)
+    //   }
+    // }, [mMessage.monitoringType])
 
     useEffect(() => {
         if (!mSession.user || !mSession.session) {
@@ -132,7 +148,7 @@ function PatientPage() {
     }, [inCall, mSession.streams])
 
     useEffect(() => {
-      if (mPublisher.publisher && humanDetection) {
+      if (mPublisher.publisher) {
          // send camera image as bitmap
         if (humanDetectionInterval) {
           clearInterval(humanDetectionInterval)
@@ -142,14 +158,12 @@ function PatientPage() {
 
         const interval = setInterval(async () => {
           const bitmap = await createImageBitmap(publisherVideoDom)
-            humanDetection.send({ image: bitmap })
-            .catch(e => {
-              console.log("detection error: ", e)
-            })
+            const hasHuman = await detectHuman(bitmap)
+            setIsMeExist(hasHuman)
           }, HUMAN_DETECTION_TIMESTAMP);
           setHumanDetectionInterval(interval)
       }
-    }, [mPublisher.publisher, humanDetection])
+    }, [mPublisher.publisher])
     
     useEffect(() => {
       if (!mSession.session) return;
@@ -159,43 +173,56 @@ function PatientPage() {
     }, [isMeExist, mSession.session, nurseConnectionIds])
 
     async function setupMediaHelper() {
-      /** Face Only detection **/
-      // const detection = new FaceDetection({
-      //   locateFile: (file) => {
-      //     return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/${file}`;
-      //   },
-      // });
-      // detection.setOptions({
-      // selfieMode: true,
-      // model: 'short',
-      // minDetectionConfidence: 0.7,
-      // });
+      let processor = new MediaProcessorHelperWorker()
 
-      const detection = new Holistic({locateFile: (file) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic@0.5.1635989137/${file}`;
-      }});
-      
-      detection.setOptions({
-        staticImageMode: true,
-        modelComplexity: 1,
-        minDetectionConfidence: 0.5,
-      });
-      
-      detection.onResults(onResults);
-      await detection.initialize();
-      setHumanDetection(detection)
+      processor.init(MonitorType.FACE_MESH).then( () => {
+        const connector = new MediaProcessorConnector(processor)
+
+        processor.getEventEmitter().on('error', (e => {
+          console.error(e)
+        }))
+        processor.getEventEmitter().on('pipelineInfo', (i => {
+          console.info(i)
+        }))
+        processor.getEventEmitter().on('warn', (w => {
+          console.warn(w)
+        }))
+
+        if (OT.hasMediaProcessorSupport()) {
+          mPublisher.publisher
+          .setVideoMediaProcessorConnector(connector)
+          .then(() => {
+          })
+          .catch((e) => {
+            console.error(e);
+          });
+        }  else {
+          console.log('Browser does not support media processors');
+        }
+      })
     }
 
-    function onResults(results) {
-      // if (results.detections.length > 0) { // For Face Only detection
-      if (results.faceLandmarks || results.leftHandLandmarks || results.rightHandLandmarks) {
-        setIsMeExist(true)
-      }
-      else {
-        setIsMeExist(false)
-      }
-    }
+    async function detectHuman(imageBitmap) {
+      // Load model
+      await tf.setBackend('webgl'); // or 'cpu' if needed
+      await tf.ready();             // Ensure backend is ready
+
+      const model = await cocoSsd.load();
+
+      // Convert ImageBitmap to HTMLCanvasElement
+      const canvas = document.createElement('canvas');
+      canvas.width = imageBitmap.width;
+      canvas.height = imageBitmap.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(imageBitmap, 0, 0);
     
+      // Run detection
+      const predictions = await model.detect(canvas);
+
+      // Check if any prediction is a "person"
+      const hasPerson = predictions.some(p => p.class === 'person');
+      return hasPerson;
+    }
 
     function notify(message) {
       setNotificationMessage(message)

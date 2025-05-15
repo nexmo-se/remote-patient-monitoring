@@ -59,4 +59,16 @@ export default class MessageAPI{
       });
     })
   };
+
+  static async monitoringTypeChanged(session, monitoringType){
+    await new Promise((resolve, reject) => {
+      session.signal({
+        type: "monitoring-type",
+        data: JSON.stringify({monitoringType})
+      }, (err) => {
+        if(err) reject(err);
+        else resolve();
+      });
+    })
+  };
 }

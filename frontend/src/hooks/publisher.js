@@ -133,7 +133,8 @@ function usePublisher(containerId, displayName=true){
     isPublishing,
     unpublish, 
     publish,
-    publisher
+    publisher,
+    stream
   }
 }
 export default usePublisher;
