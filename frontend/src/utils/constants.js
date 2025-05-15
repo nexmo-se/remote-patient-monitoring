@@ -1,3 +1,6 @@
+import App from "App";
+import { checkAppType } from "./utils";
+
 export const MonitorType = {
     NONE: "none",
     FACE_MESH: "face_mesh",
@@ -5,3 +8,8 @@ export const MonitorType = {
     POSE: "pose",
     HOLISTIC: "holistic"
 };
+
+export const AppType = {
+    HEALTHCARE: "healthcare",
+    EDUCATION: "education"
+}

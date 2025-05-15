@@ -1,28 +1,28 @@
-# Vonage Video Remote Patient Monitoring Reference App
+# Vonage Video Remote Monitoring Reference App
 
-Remote Patient monitoring app enables a nurse to monitor multiple patients' conditions remotely, and start a 1-1 video call with a patient when needed.
+Remote monitoring app enables a host to monitor multiple participants' conditions remotely, and start a 1-1 video call with a participant when needed.
 
 The app has the following roles:
-- A Nurse can:
-  - Monitor up to 10 patients at a time
-  - Start a 1-1 call with a patient
-  - View a queue list of patient's call request 
-  - Accept or Reject a patient’s call request
-  - Receive alarm when a patient move away from the video cam
+- A Host can:
+  - Monitor up to 10 participants at a time
+  - Start a 1-1 call with a participant
+  - View a queue list of participant's call request 
+  - Accept or Reject a participant call request
+  - Receive alarm when a participant move away from the video cam
   - Mute an alarm
-  - See an indicator on the loudest patient's video tile
-  - Subscribe to a patient's audio during monitoring
-  - View the rest of the patients while in a call
+  - See an indicator on the loudest participant's video tile
+  - Subscribe to a participant's audio during monitoring
+  - View the rest of the participant while in a call
   
-- Patients can:
-  - Join a 1-1 call that initiated by a nurse
-  - Request to call a nurse
+- Participants can:
+  - Join a 1-1 call that initiated by a host
+  - Request to call a host
 
-When you first launch the app, you will be asked to enter a room name. Ensure both nurse and patients have the same room name so they can join the same session.
+When you first launch the app, you will be asked to enter a room name. Ensure both host and participants have the same room name so they can join the same session.
 
 ## Architecture
-This app makes use of vonage video api to communicate between nurse and patients, such as call requests and missing patient alerts. 
-For human detection, we use Google Mediapipe Holistic library to detect a patient's face, hands, and pose. If a patient doesnt exist in the video frame, a signal will be sent to the session, so the nurse can get an alarm on the missing patient's video tile.
+This app makes use of vonage video api to communicate between host and participants, such as call requests and missing participants alerts. 
+For human detection, we use Google Mediapipe Holistic library to detect a participant's face, hands, and pose. If a participant doesnt exist in the video frame, a signal will be sent to the session, so the host can get an alarm on the missing participant's video tile.
   - Backend: NodeJS
   - Frontend: ReactJS
   - Video call/monitoring: Vonage Video API

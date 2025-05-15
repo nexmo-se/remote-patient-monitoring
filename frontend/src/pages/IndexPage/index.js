@@ -8,9 +8,10 @@ import '@vonage/vwc-radio';
 import '@vonage/vwc-textfield';
 import '@vonage/vwc-button';
 import "./styles.css";
+import { ParticipantRole, HostRole } from "utils/utils";
 
 export default function IndexPage() {
-    const [role, setRole] = useState('patient')
+    const [role, setRole] = useState('participant')
     const [isLoading, setIsLoading] = useState(false)
     const navigate = useNavigate();
     const mSession = useContext(SessionContext);
@@ -33,7 +34,7 @@ export default function IndexPage() {
     else {
     return (
         <>
-        <h2 id="room-form-title">Remote Patient Monitoring</h2>
+        <h2 id="room-form-title">{`Remote ${ParticipantRole} Monitoring`}</h2>
         <form id="room-form"
         onSubmit={onFormSubmit}>
             <vwc-textfield
@@ -68,11 +69,11 @@ export default function IndexPage() {
             </vwc-textfield>
             <div className="role">
             <label>Role: </label>
-            <vwc-formfield label="Nurse" name="role123" >
-                <vwc-radio name="role-1" value="nurse" onClick={(e) => setRole(e.target.value)}></vwc-radio>
+            <vwc-formfield label={HostRole} name="role123" >
+                <vwc-radio name="role-1" value="host" onClick={(e) => setRole(e.target.value)}></vwc-radio>
             </vwc-formfield>
-            <vwc-formfield label="Patient">
-                <vwc-radio name="role-1" value="patient" checked="" onClick={(e) => setRole(e.target.value)}></vwc-radio>
+            <vwc-formfield label={ParticipantRole}>
+                <vwc-radio name="role-1" value="participant" checked="" onClick={(e) => setRole(e.target.value)}></vwc-radio>
             </vwc-formfield>
             </div>
             <vwc-button
@@ -90,7 +91,7 @@ export default function IndexPage() {
             href="https://docs.google.com/presentation/d/1S8llLIrRGUWmsPukd5DgBfxqlo6NojK6He7IRzHAi6k/edit?usp=sharing"
             target="_blank"
             rel="noreferrer">
-            Remote Patient Monitoring doc.
+            {`Remote ${ParticipantRole} Monitoring doc`}.
         </a>
         </p>
         </>     

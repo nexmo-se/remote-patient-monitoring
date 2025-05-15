@@ -13,6 +13,7 @@ import useSubscriber from "hooks/subscriber";
 import MessageAPI from "api/message";
 import OT from "@vonage/client-sdk-video";
 import { MonitorType } from "utils/constants";
+import { HostRole } from "utils/utils";
 import { MediaProcessorConnector} from '@vonage/media-processor'
 import MediaProcessorHelperWorker from "helpers/MediaProcessorHelperWorker";
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
@@ -20,12 +21,12 @@ import * as tf from '@tensorflow/tfjs';
 
 import './styles.css'
 
-const REQUEST_MESSAGE = "A Nurse start a call"
+const REQUEST_MESSAGE = `A ${HostRole} start a call`
 const REJECT_MESSAGE = "Your request was rejected"
-const CALL_ENDED_MESSAGE = "Nurse left the call"
+const CALL_ENDED_MESSAGE = `${HostRole} left the call`
 const HUMAN_DETECTION_TIMESTAMP = 2000
 
-function PatientPage() {
+function ParticipantPage() {
     const [inCall, setInCall] = useState(false)
     const [openNotification, setOpenNotification] = useState(false)
     const [notificationMessage, setNotificationMessage] = useState(REQUEST_MESSAGE)
@@ -33,7 +34,7 @@ function PatientPage() {
     const [queueNumber, setQueueNumber] = useState(null)
     const [humanDetectionInterval, setHumanDetectionInterval] = useState()
     const [isMeExist, setIsMeExist] = useState(true)
-    const [nurseConnectionIds, setNurseConnectionIds] = useState([])
+    const [hostConnectionIds, setHostConnectionIds] = useState([])
 
     const navigate = useNavigate();
     const mSession = useContext(SessionContext);
@@ -75,10 +76,10 @@ function PatientPage() {
     }, [mSession.user, mSession.session, navigate])
 
     useEffect(() => {
-      let nurseConnectionIds = mSession.connections.filter((connection) => JSON.parse(connection.data).role === "nurse").map((connection) => connection.id)
-      setNurseConnectionIds( (prevConnectionIds) => {
-        if (prevConnectionIds.sort().toString() !== nurseConnectionIds.sort().toString()) {
-          return nurseConnectionIds
+      let hostConnectionIds = mSession.connections.filter((connection) => JSON.parse(connection.data).role === "host").map((connection) => connection.id)
+      setHostConnectionIds( (prevConnectionIds) => {
+        if (prevConnectionIds.sort().toString() !== hostConnectionIds.sort().toString()) {
+          return hostConnectionIds
         }
         return prevConnectionIds
       })
@@ -86,17 +87,17 @@ function PatientPage() {
     }, [mSession.connections])
 
     useEffect(() => {
-      if (nurseConnectionIds.length === 0 && inCall) {
+      if (hostConnectionIds.length === 0 && inCall) {
         notify(CALL_ENDED_MESSAGE); setInCall(false);
       }
-      else if (nurseConnectionIds.length > 0 && !mMessage.raisedHands.find((raisehand) => raisehand.id === mSession.user.id)) {
+      else if (hostConnectionIds.length > 0 && !mMessage.raisedHands.find((raisehand) => raisehand.id === mSession.user.id)) {
         setDisableRequestButton(false)
       }
-      else if (nurseConnectionIds.length === 0) {
+      else if (hostConnectionIds.length === 0) {
         setDisableRequestButton(true)
       }
     
-    }, [nurseConnectionIds, inCall, mMessage.raisedHands])
+    }, [hostConnectionIds, inCall, mMessage.raisedHands])
 
     useEffect(() => {
       if (mMessage.requestCall && mSession.user && mMessage.requestCall.id === mSession.user.id) {
@@ -139,8 +140,8 @@ function PatientPage() {
     // Subscribe to in the call
     useEffect(() => {
       if (inCall) {
-        const nurseStreams = mSession.streams.filter((stream) => JSON.parse(stream.connection.data).role === "nurse")
-        if (nurseStreams.length > 0) mSubscriber.subscribe(nurseStreams)
+        const hostStreams = mSession.streams.filter((stream) => JSON.parse(stream.connection.data).role === "host")
+        if (hostStreams.length > 0) mSubscriber.subscribe(hostStreams)
       }
       else {
         mSubscriber.unsubscribe()
@@ -167,10 +168,10 @@ function PatientPage() {
     
     useEffect(() => {
       if (!mSession.session) return;
-      if (nurseConnectionIds.length > 0) {
+      if (hostConnectionIds.length > 0) {
        MessageAPI.updateUserState(mSession.session, mSession.user, isMeExist)
       }
-    }, [isMeExist, mSession.session, nurseConnectionIds])
+    }, [isMeExist, mSession.session, hostConnectionIds])
 
     async function setupMediaHelper() {
       let processor = new MediaProcessorHelperWorker()
@@ -235,12 +236,12 @@ function PatientPage() {
     }
 
     return (
-      <div id="patientPage">
+      <div id="participantPage">
         {!inCall ? 
           <>
           <h1 id="monitoring-message">You are now under monitoring...</h1>
           <vwc-button
-            label={mMessage.raisedHands.find((raisehand) => raisehand.id === mSession.user.id)? "Request sent":"Call A Nurse"}
+            label={mMessage.raisedHands.find((raisehand) => raisehand.id === mSession.user.id)? "Request sent":`Call ${HostRole}`}
             layout="filled"
             shape="pill"
             type="submit"
@@ -283,4 +284,4 @@ function PatientPage() {
     )
 }
 
-export default PatientPage
+export default ParticipantPage

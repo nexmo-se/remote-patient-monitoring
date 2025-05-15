@@ -3,7 +3,6 @@ import { useState, useEffect, createContext, useContext} from "react";
 import { SessionContext } from "contexts/session";
 import User from 'entities/user';
 import MessageAPI from "api/message";
-import { MonitorType } from "utils/constants";
 
 export const MessageContext = createContext({});
 export default function MessageProvider({ children }){
@@ -12,7 +11,7 @@ export default function MessageProvider({ children }){
   const [ lastRaiseHandRequest, setLastRaiseHandRequest ] = useState();
   const [ rejectedRequest, setRejectedRequest ] = useState();
   const [ missingUsers, setMissingUsers ] = useState([]);
-  const [ monitoringType, setMonitoringType ] = useState(MonitorType.NONE);
+  const [ monitoringType, setMonitoringType ] = useState("none");
 
   const mSession = useContext(SessionContext);;
 
@@ -35,8 +34,8 @@ export default function MessageProvider({ children }){
   }
 
   useEffect(() => {
-    let nurse = mSession.connections.find((connection) => JSON.parse(connection.data).role === "nurse")
-    if(!nurse) {
+    let host = mSession.connections.find((connection) => JSON.parse(connection.data).role === "host")
+    if(!host) {
       setRequestCall(false)
       setRaisedHands([])
     }
@@ -57,7 +56,7 @@ export default function MessageProvider({ children }){
         const isExistingUser = prev.find((raisedHand) => {
           return raisedHand.id === user.id
         });
-        if (!isExistingUser && JSON.parse(mSession.session.connection.data).role === "nurse") MessageAPI.sendQueueList(mSession.session, [...prev, user]) ;
+        if (!isExistingUser && JSON.parse(mSession.session.connection.data).role === "host") MessageAPI.sendQueueList(mSession.session, [...prev, user]) ;
         return prev;
       });
     });

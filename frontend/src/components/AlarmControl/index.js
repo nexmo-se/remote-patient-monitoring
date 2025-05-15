@@ -6,7 +6,7 @@ import { MessageContext } from "contexts/message";
 function AlarmControl ({selectedUser, acceptCall, closeAlarm, ...props}) {
     const mMessage = useContext(MessageContext)
 
-    async function callPatient(e) {
+    async function callParticipant(e) {
         if (!selectedUser) return;
         closeAlarm()
         acceptCall(selectedUser, true)
@@ -21,7 +21,7 @@ function AlarmControl ({selectedUser, acceptCall, closeAlarm, ...props}) {
     return(
       <div className="alarm-control" {...props}>
         <ControlButton.Call
-          onClick={callPatient}
+          onClick={callParticipant}
           style={{ marginRight: 8 }}
         />
         <ControlButton.MuteAlarm 

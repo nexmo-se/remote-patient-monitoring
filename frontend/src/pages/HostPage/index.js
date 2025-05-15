@@ -17,8 +17,9 @@ import MessageAPI from "api/message";
 import './styles.css'
 import clsx from "clsx";
 import User from "entities/user";
+import { ParticipantRole } from "utils/utils";
 
-function NursePage() {
+function HostPage() {
     const [inCall, setInCall] = useState(false)
     const [openNotification, setOpenNotification] = useState(false)
     const [openStartCallDialog, setOpenStartCallDialog] = useState(false)
@@ -29,7 +30,7 @@ function NursePage() {
     const navigate = useNavigate();
     const mSession = useContext(SessionContext);
     const mMessage = useContext(MessageContext)
-    const mPublisher = usePublisher("nurseContainer");
+    const mPublisher = usePublisher("hostContainer");
     const mSubscriber = useSubscriber({ 
       call : "callContainer",
       monitor: "monitorContainer"
@@ -92,7 +93,7 @@ function NursePage() {
 
     }, [mMessage.requestCall])
 
-    // Adjust number of patient in a page
+    // Adjust number of participant in a page
     useEffect(() => {
       if (inCall) {
         if (!mPublisher.publisher) mPublisher.publish(mSession.user);
@@ -107,7 +108,7 @@ function NursePage() {
       if (mSubscriber.monitorLayout) mSubscriber.monitorLayout.layout()
     }, [inCall, mSession.user])
 
-    // End Call session if the patient's connection dropped
+    // End Call session if the participant's connection dropped
     useEffect(() => {
       if (!mMessage.requestCall) return;
       if (!inCall && mSession.connections.find((connection) => connection.id === mMessage.requestCall.id)) { 
@@ -260,16 +261,16 @@ function NursePage() {
 
     return (
       <QueueListDrawer open={openQueueList} hideDrawer={hideDrawer} acceptCall={callUser} rejectCall={rejectUser}>
-      <div id="nursePage">
+      <div id="hostPage">
           {inCall? 
             <InfoBanner message="In Call"></InfoBanner> : 
             <p style={{position: "absolute", top: "16px", left: "24px"}}>{`Subscribed Audio: ${mSubscriber.soloAudioSubscriber && mSubscriber.soloAudioSubscriber.stream ? JSON.parse(mSubscriber.soloAudioSubscriber.stream.connection.data).name: "All"}` }</p>
           }
-          {mSession.connections.length === 1 && !inCall? <h1 className="noPatientMessage">No Patient</h1> : null }
+          {mSession.connections.length === 1 && !inCall? <h1 className="noParticipantMessage">{`No ${ParticipantRole}`}</h1> : null }
           <div className={clsx("callContainer", (inCall)? "inCall" : "")}>
             <LayoutContainer id="callContainer" size="big"/>
-            <div className="nurseContainer">
-            <LayoutContainer id="nurseContainer" size="big"/>
+            <div className="hostContainer">
+            <LayoutContainer id="hostContainer" size="big"/>
             </div>
           </div>
           <div className={clsx("monitorContainer", (inCall)? "inCall" : "")} onClick={setSoloAudio}>
@@ -309,7 +310,7 @@ function NursePage() {
           >
           <button type="submit" style={{display: "none"}}></button>
           </vwc-button>
-          {mSession.connections.length > 1 ? <p style={{position: "absolute", bottom: "24px", left: "84px"}}>{`Number of patients: ${mSession.streams.filter((stream) => JSON.parse(stream.connection.data).role === "patient").length}`}</p> : null}
+          {mSession.connections.length > 1 ? <p style={{position: "absolute", bottom: "24px", left: "84px"}}>{`Number of ${ParticipantRole}s: ${mSession.streams.filter((stream) => JSON.parse(stream.connection.data).role === "participant").length}`}</p> : null}
           <StartCallDialog 
             open={openStartCallDialog} 
             dismissAction={() => setOpenStartCallDialog(false)}>
@@ -317,7 +318,7 @@ function NursePage() {
           <Notification 
             open={openNotification}
             title="Call Request"
-            message={mMessage.lastRaiseHandRequest ? `Patient: ${mMessage.lastRaiseHandRequest.name} raised a call request` : ""}
+            message={mMessage.lastRaiseHandRequest ? `${ParticipantRole}: ${mMessage.lastRaiseHandRequest.name} raised a call request` : ""}
             okText={inCall ? "Add to Queue" : "Accept"}
             okAction={() => callUser(mMessage.lastRaiseHandRequest)}
             cancelText="Reject"
@@ -329,4 +330,4 @@ function NursePage() {
     )
 }
 
-export default NursePage
+export default HostPage

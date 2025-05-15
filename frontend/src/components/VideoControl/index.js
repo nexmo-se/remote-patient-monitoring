@@ -70,7 +70,7 @@ function VideoControl ({ publisher, unpublish, children }) {
           onClick={toggleAudio}
           style={{ marginRight: 8 }}
         />
-        {mSession.user.role === "nurse" ?
+        {mSession.user.role === "host" ?
          <ControlButton.Hangup
             onClick={endCall}
         /> : null}

@@ -1,5 +1,5 @@
 project:
-    name: remote-patient-monitoring
+    name: remote-monitoring
 instance:
     name: dev
     runtime: nodejs16

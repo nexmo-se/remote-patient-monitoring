@@ -113,7 +113,7 @@ function useSubscriber({call, monitor}){
   }
 
   useEffect(() => {
-    if (!mSession.user || mSession.user.role !== "nurse") return;
+    if (!mSession.user || mSession.user.role !== "host") return;
 
     let prevLoudestDom = document.getElementsByClassName("loudest")[0];
          
@@ -135,7 +135,7 @@ function useSubscriber({call, monitor}){
   },[loudestSubscriber, mSession.user, mMessage.requestCall, soloAudioSubscriber])
 
   useEffect(() => {
-    if (!mSession.user || mSession.user.role !== "nurse") return;
+    if (!mSession.user || mSession.user.role !== "host") return;
     let prevMissingSubscriberDom = document.querySelectorAll(".missing");
     // Get corresponding subscriber ids
     const missingSubscribers = monitorSubscribers.filter((subscriber) => mMessage.missingUsers.find((user) => {
@@ -193,7 +193,7 @@ function useSubscriber({call, monitor}){
         }
       })
     });
-    if (mSession.user.role === "nurse")  {
+    if (mSession.user.role === "host")  {
       subscriber.on("audioLevelUpdated", handleAudioLevelChange)
     }
     if (containerId === call) {

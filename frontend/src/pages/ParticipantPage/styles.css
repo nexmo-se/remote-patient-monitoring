@@ -1,4 +1,4 @@
-#patientPage {
+#participantPage {
     background-color: black;
     color: white;
     width: 100vw;
@@ -11,7 +11,7 @@
     padding-top: 64px;
 }
 
-#patientPage .videoContainer {
+#participantPage .videoContainer {
     background-color: black;
     position: relative;
     width: 100%;

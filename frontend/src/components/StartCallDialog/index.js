@@ -7,6 +7,7 @@ import MessageAPI from "api/message";
 import '@vonage/vwc-dialog';
 import '@vonage/vwc-button';
 import User from 'entities/user';
+import { ParticipantRole } from "utils/utils";
 
 export default function StartCallDialog({open, dismissAction}) {
   const ref = useRef(null);
@@ -27,12 +28,12 @@ export default function StartCallDialog({open, dismissAction}) {
   }
 
   return (
-  <vwc-dialog open={open || undefined} ref={ref} heading="Call A Patient" close-button="true">
+  <vwc-dialog open={open || undefined} ref={ref} heading={`Call A ${ParticipantRole}`} close-button="true">
     <hr></hr>
     <vwc-list>
     {mSession.connections.map((connection, index) => {
         const connectionData = JSON.parse(connection.data);
-        if (connectionData.role !== "patient" || (mMessage.requestCall && mMessage.requestCall.id === connection.id)) return;
+        if (connectionData.role !== "participant" || (mMessage.requestCall && mMessage.requestCall.id === connection.id)) return;
         else {
         return (
           <div key={`call-user-hr-${index}`}>

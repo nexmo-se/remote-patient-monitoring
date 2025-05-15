@@ -1,28 +1,28 @@
-#nursePage {
+#hostPage {
     background-color: black;
     color: white;
     width: 100vw;
     height: 100vh;
 }
 
-#nursePage .callContainer {
+#hostPage .callContainer {
     display: none;
     position: relative;
     margin-left: 16px;
 }
 
-#nursePage .videoCallControls {
+#hostPage .videoCallControls {
     width: 53%;
     height: calc(100% - 80px);
 }
 
-#nursePage .callContainer.inCall {
+#hostPage .callContainer.inCall {
     display: inline-block;
     width: 53%;
     height: calc(100% - 140px);
     margin-bottom: 140px;
 }
-#nursePage .nurseContainer {
+#hostPage .hostContainer {
     position: absolute;
     width: 210px;
     height: 160px;
@@ -31,7 +31,7 @@
     border: 2px solid white;
 }
 
-#nursePage .monitorContainer {
+#hostPage .monitorContainer {
     display: inline-block;
     margin-right: 4px;
     background-color: black;
@@ -42,7 +42,7 @@
     margin-bottom: 100px;
 }
 
-#nursePage .monitorContainer.inCall {
+#hostPage .monitorContainer.inCall {
     border-style: none;
     width: 45%;
     height: calc(100% - 140px);
@@ -50,7 +50,7 @@
     margin-bottom: 140px;
 }
 
-#nursePage .monitorContainer .OT_root {
+#hostPage .monitorContainer .OT_root {
     box-sizing: border-box;
     border-style: solid;
     border-width: 8px;
@@ -58,12 +58,12 @@
     border-color: transparent;
 }
 
-#nursePage .monitorContainer .OT_root.loudest {
+#hostPage .monitorContainer .OT_root.loudest {
     border-color: rgb(28,135,49); 
 }
 
-#nursePage .monitorContainer .OT_root.missing,
-#nursePage .monitorContainer .OT_root.loudest.missing {
+#hostPage .monitorContainer .OT_root.missing,
+#hostPage .monitorContainer .OT_root.loudest.missing {
     animation: blink-animation 1s steps(5, start) infinite;
     -webkit-animation: blink-animation 1s steps(5, start) infinite;
     border-color: rgb(230,29,29)
@@ -80,16 +80,16 @@
     }
 }
 
-#nursePage .noPatientMessage {
+#hostPage .noParticipantMessage {
     margin-bottom: 64px;
     margin-top: 0px;
     padding-top: 64px;
 }
 
-#nursePage .monitorContainer .OT_root:hover {
+#hostPage .monitorContainer .OT_root:hover {
     cursor: pointer;
 }
 
-#nursePage .monitorContainer.inCall .OT_root:hover {
+#hostPage .monitorContainer.inCall .OT_root:hover {
     cursor: default;
 }

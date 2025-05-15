@@ -4,8 +4,8 @@ import './App.css';
 import IndexPage from "pages/IndexPage"
 import SessionProvider from "contexts/session";
 import MessageProvider from "contexts/message";
-import NursePage from 'pages/NursePage';
-import PatientPage from 'pages/PatientPage';
+import HostPage from 'pages/HostPage';
+import ParticipantPage from 'pages/ParticipantPage';
 
 function App() {
   return (
@@ -14,8 +14,8 @@ function App() {
     <MessageProvider>
       <Routes>
         <Route path="/" element={<IndexPage/>}></Route>
-        <Route path="/nurse" element={<NursePage/>}></Route>
-        <Route path="/patient" element={<PatientPage/>}></Route>
+        <Route path="/host" element={<HostPage/>}></Route>
+        <Route path="/participant" element={<ParticipantPage/>}></Route>
       </Routes>
       </MessageProvider>
     </SessionProvider>
