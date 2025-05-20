@@ -1,20 +1,28 @@
 // @flow
 import "@vonage/vwc-select";
 import "@vonage/vwc-list/vwc-list-item";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import MessageAPI from "api/message";
 import { MonitorType } from "utils/constants";
+import { SessionContext } from "contexts/session";
 
 function MonitoringControl ({children}) {
   const [monitorType, setMonitorType] = useState(MonitorType.NONE)
+  const mSession = useContext(SessionContext)
 
   const monitorTypeChange = (event) => {
     const newMonitoringType = event.target.value 
     if (newMonitoringType !== monitorType) {
       setMonitorType(newMonitoringType)
-      MessageAPI.monitoringTypeChanged(newMonitoringType)
+      MessageAPI.monitoringTypeChanged(mSession.session, newMonitoringType)
     }
   }
+
+  useEffect(() => {
+    if (mSession.connections.length > 0) {
+      MessageAPI.monitoringTypeChanged(mSession.session, monitorType)
+    }
+  }, [mSession.connections])
 
   return(
     <div className="monitoring-control">

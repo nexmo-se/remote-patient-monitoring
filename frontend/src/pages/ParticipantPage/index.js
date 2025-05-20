@@ -45,8 +45,6 @@ function ParticipantPage() {
         monitor: "cameraContainer"
       });
 
-    let mediaProcessor = null
-
     useEffect(() => {
         window.onpopstate = e => {
           window.location.reload(true)
@@ -54,16 +52,10 @@ function ParticipantPage() {
     },[])
 
     useEffect(() => {
-      if(mPublisher.stream) {
-        setupMediaHelper()
+      if (mPublisher.stream && mMessage.monitoringType) {
+        setupMediaHelper(mMessage.monitoringType)
       }
-    }, [mPublisher.stream])
-
-    // useEffect(() => {
-    //   if (mediaProcessor) {
-    //     changeTransformType(mMessage.monitoringType)
-    //   }
-    // }, [mMessage.monitoringType])
+    }, [mMessage.monitoringType, mPublisher.stream])
 
     useEffect(() => {
         if (!mSession.user || !mSession.session) {
@@ -173,19 +165,24 @@ function ParticipantPage() {
       }
     }, [isMeExist, mSession.session, hostConnectionIds])
 
-    async function setupMediaHelper() {
-      let processor = new MediaProcessorHelperWorker()
+    async function setupMediaHelper(monitorType) {
+      mPublisher.publisher.setVideoMediaProcessorConnector(null)
 
-      processor.init(MonitorType.FACE_MESH).then( () => {
-        const connector = new MediaProcessorConnector(processor)
+      if (monitorType == MonitorType.NONE) {
+        return;
+      }
+      const mediaProcessor = new MediaProcessorHelperWorker()
 
-        processor.getEventEmitter().on('error', (e => {
+      mediaProcessor.init(monitorType).then( () => {
+        const connector = new MediaProcessorConnector(mediaProcessor)
+
+        mediaProcessor.getEventEmitter().on('error', (e => {
           console.error(e)
         }))
-        processor.getEventEmitter().on('pipelineInfo', (i => {
+        mediaProcessor.getEventEmitter().on('pipelineInfo', (i => {
           console.info(i)
         }))
-        processor.getEventEmitter().on('warn', (w => {
+        mediaProcessor.getEventEmitter().on('warn', (w => {
           console.warn(w)
         }))
 

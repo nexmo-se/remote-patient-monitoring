@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext} from "react";
 import { SessionContext } from "contexts/session";
 import User from 'entities/user';
 import MessageAPI from "api/message";
+import { MonitorType } from "utils/constants";
 
 export const MessageContext = createContext({});
 export default function MessageProvider({ children }){
@@ -11,7 +12,7 @@ export default function MessageProvider({ children }){
   const [ lastRaiseHandRequest, setLastRaiseHandRequest ] = useState();
   const [ rejectedRequest, setRejectedRequest ] = useState();
   const [ missingUsers, setMissingUsers ] = useState([]);
-  const [ monitoringType, setMonitoringType ] = useState("none");
+  const [ monitoringType, setMonitoringType ] = useState(MonitorType.NONE);
 
   const mSession = useContext(SessionContext);;
 
