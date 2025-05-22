@@ -1,7 +1,6 @@
 import {getVonageMetadata } from '@vonage/media-processor'
 import MediapipeObject from './MediapipeObject'
 import Emittery from 'emittery' 
-import { MonitorType } from 'utils/constants'
 
 class MediaProcessorHelperWorker {
     worker_
@@ -20,18 +19,10 @@ class MediaProcessorHelperWorker {
     }
 
     onResult(result) {
-        if(this.modelType_ === 'selfie_segmentation'){
-            let selfieResult = result
-            this.worker_.postMessage({
-                operation: 'onResults',
-                info: selfieResult.segmentationMask
-            }, [selfieResult.segmentationMask])
-        }else{
-            this.worker_.postMessage({
-                operation: 'onResults',
-                info: JSON.stringify(result)
-            })
-        }
+        this.worker_.postMessage({
+            operation: 'onResults',
+            info: JSON.stringify(result)
+        })
     }
 
     handleWorkerEvent(msg){
@@ -77,7 +68,6 @@ class MediaProcessorHelperWorker {
                     operation: 'init',
                     modelType: modelType, 
                     metaData: metaData,
-                    mediapipeConsts: JSON.stringify(this.mediapipe_.getMediapipeConsts())
                 })
             })
             this.innerEmittery_.once('init').then( data => {
@@ -115,11 +105,7 @@ class MediaProcessorHelperWorker {
             })
             this.innerEmittery_.once('destroy').then( data => {
                 if(data.info === 'success'){
-                    this.mediapipe_.mediapipeHelper_?.close().then( () => {
-                        resolve()
-                    }).catch(e => {
-                        reject(e)
-                    })
+                    this.mediapipe_.detector = null
                 }else {
                     reject(data.error)
                 }

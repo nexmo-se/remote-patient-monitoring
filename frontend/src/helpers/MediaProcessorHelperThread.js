@@ -27,14 +27,13 @@ if( 'function' === typeof importScripts) {
         const {operation} = event.data
 
         if(operation === 'init'){
-            const {metaData, modelType, mediapipeConsts} = event.data
+            const {metaData, modelType} = event.data
             if(metaData){
                 setVonageMetadata(JSON.parse(metaData))
             }
             modelType_ = modelType
             mediaipeTransformer_ = new MediapipeTransformer()
             mediapipePorcess_ = new MediapipePorcess()
-            mediaipeTransformer_.setMediapipeConsts(JSON.parse(mediapipeConsts))
             mediaipeTransformer_.init(modelType, mediapipePorcess_).then( () => {
                 mediaProcessor_ = new MediaProcessor()
                 mediaProcessor_.on('error', e => {

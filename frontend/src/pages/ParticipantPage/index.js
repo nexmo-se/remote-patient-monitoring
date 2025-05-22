@@ -55,7 +55,7 @@ function ParticipantPage() {
       if (mPublisher.stream && mMessage.monitoringType) {
         setupMediaHelper(mMessage.monitoringType)
       }
-    }, [mMessage.monitoringType, mPublisher.stream])
+    }, [mMessage.monitoringType, mPublisher.stream, inCall])
 
     useEffect(() => {
         if (!mSession.user || !mSession.session) {
@@ -166,11 +166,11 @@ function ParticipantPage() {
     }, [isMeExist, mSession.session, hostConnectionIds])
 
     async function setupMediaHelper(monitorType) {
-      mPublisher.publisher.setVideoMediaProcessorConnector(null)
-
-      if (monitorType == MonitorType.NONE) {
+      if (monitorType == MonitorType.NONE || inCall) {
+        await mPublisher.publisher.setVideoMediaProcessorConnector(null)
         return;
       }
+      console.log("change monitor type ", monitorType)
       const mediaProcessor = new MediaProcessorHelperWorker()
 
       mediaProcessor.init(monitorType).then( () => {

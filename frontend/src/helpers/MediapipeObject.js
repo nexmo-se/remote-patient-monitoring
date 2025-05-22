@@ -1,156 +1,82 @@
-import { MediapipeHelper } from "@vonage/ml-transformers"
-import {getVonageFaceMash, getVonageHands, getVonageHolistic, getVonageObjectron, getVonagePose, getVonageFaceDetection} from '@vonage/ml-transformers'
+import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+import { MonitorType } from "utils/constants";
+const { FaceLandmarker, FilesetResolver,  ObjectDetector, PoseLandmarker} = vision;
+
 
 class MediapipeObject{
-    mediapipeHelper_ = null
     mediapipeListener_ = null
+    detector = null;
+    runningMode = "IMAGE";
+
     constructor(){
         
     }
 
-    getMediapipeConsts() {
-        let ret = {
-            facedetection: {
-                FACEDETECTION_LIPS: getVonageFaceDetection().FACEDETECTION_LIPS,
-                FACEDETECTION_LEFT_EYE: getVonageFaceDetection().FACEDETECTION_LEFT_EYE,
-                FACEDETECTION_LEFT_EYEBROW: getVonageFaceDetection().FACEDETECTION_LEFT_EYEBROW,
-                FACEDETECTION_RIGHT_EYE: getVonageFaceDetection().FACEDETECTION_RIGHT_EYE,
-                FACEDETECTION_RIGHT_EYEBROW: getVonageFaceDetection().FACEDETECTION_RIGHT_EYEBROW,
-                FACEDETECTION_FACE_OVAL: getVonageFaceDetection().FACEDETECTION_FACE_OVAL,
-                FACEDETECTION_CONTOURS: getVonageFaceDetection().FACEDETECTION_CONTOURS,
-                FACEDETECTION_TESSELATION: getVonageFaceDetection().FACEDETECTION_TESSELATION
-            },
-            facemash: {
-                FACE_GEOMETRY: getVonageFaceMash().FACE_GEOMETRY,
-                FACEMESH_LIPS: getVonageFaceMash().FACEMESH_LIPS,
-                FACEMESH_LEFT_EYE: getVonageFaceMash().FACEMESH_LEFT_EYE,
-                FACEMESH_LEFT_EYEBROW: getVonageFaceMash().FACEMESH_LEFT_EYEBROW,
-                FACEMESH_LEFT_IRIS: getVonageFaceMash().FACEMESH_LEFT_IRIS,
-                FACEMESH_RIGHT_EYE: getVonageFaceMash().FACEMESH_RIGHT_EYE,
-                FACEMESH_RIGHT_EYEBROW: getVonageFaceMash().FACEMESH_RIGHT_EYEBROW,
-                FACEMESH_RIGHT_IRIS: getVonageFaceMash().FACEMESH_RIGHT_IRIS,
-                FACEMESH_FACE_OVAL: getVonageFaceMash().FACEMESH_FACE_OVAL,
-                FACEMESH_CONTOURS: getVonageFaceMash().FACEMESH_CONTOURS,
-                FACEMESH_TESSELATION: getVonageFaceMash().FACEMESH_TESSELATION
-            },
-            holistic: {
-                FACE_GEOMETRY: getVonageHolistic().FACE_GEOMETRY,
-                FACEMESH_LIPS: getVonageHolistic().FACEMESH_LIPS,
-                FACEMESH_LEFT_EYE: getVonageHolistic().FACEMESH_LEFT_EYE,
-                FACEMESH_LEFT_EYEBROW: getVonageHolistic().FACEMESH_LEFT_EYEBROW,
-                FACEMESH_LEFT_IRIS: getVonageHolistic().FACEMESH_LEFT_IRIS,
-                FACEMESH_RIGHT_EYE: getVonageHolistic().FACEMESH_RIGHT_EYE,
-                FACEMESH_RIGHT_EYEBROW: getVonageHolistic().FACEMESH_RIGHT_EYEBROW,
-                FACEMESH_RIGHT_IRIS: getVonageHolistic().FACEMESH_RIGHT_IRIS,
-                FACEMESH_FACE_OVAL: getVonageHolistic().FACEMESH_FACE_OVAL,
-                FACEMESH_CONTOURS: getVonageHolistic().FACEMESH_CONTOURS,
-                FACEMESH_TESSELATION: getVonageHolistic().FACEMESH_TESSELATION,
-                HAND_CONNECTIONS: getVonageHolistic().HAND_CONNECTIONS,
-                POSE_CONNECTIONS: getVonageHolistic().POSE_CONNECTIONS,
-                POSE_LANDMARKS: getVonageHolistic().POSE_LANDMARKS,
-                POSE_LANDMARKS_LEFT: getVonageHolistic().POSE_LANDMARKS_LEFT,
-                POSE_LANDMARKS_RIGHT: getVonageHolistic().POSE_LANDMARKS_RIGHT,
-                POSE_LANDMARKS_NEUTRAL: getVonageHolistic().POSE_LANDMARKS_NEUTRAL
-            },
-            hands: {
-                HAND_CONNECTIONS: getVonageHands().HAND_CONNECTIONS
-            },
-            objectron: {
-                BOX_CONNECTIONS: getVonageObjectron().BOX_CONNECTIONS,
-                BOX_KEYPOINTS: getVonageObjectron().BOX_KEYPOINTS
-            },
-            pose: {
-                POSE_CONNECTIONS: getVonagePose().POSE_CONNECTIONS,
-                POSE_LANDMARKS: getVonagePose().POSE_LANDMARKS,
-                POSE_LANDMARKS_LEFT: getVonagePose().POSE_LANDMARKS_LEFT,
-                POSE_LANDMARKS_RIGHT: getVonagePose().POSE_LANDMARKS_RIGHT,
-                POSE_LANDMARKS_NEUTRAL: getVonagePose().POSE_LANDMARKS_NEUTRAL
-            }
-        }
-        return ret
-    }
-
     getModelOptions(modelType) {
         let option = {}
-        if(modelType === 'face_detection'){
-            option= {
-                selfieMode: false,
-                minDetectionConfidence: 0.1,
-                model: 'short'
-            }
-        } else if (modelType === 'face_mesh'){
+        if (modelType === MonitorType.FACE_MESH){
             option = {
-                selfieMode: false,
-                minDetectionConfidence: 0.1,
-                minTrackingConfidence: 0.1,
-                refineLandmarks: true
-            }
-        } else if (modelType === 'hands'){
-            option = {
-                modelComplexity: 1,
-                selfieMode: false,
-                minDetectionConfidence: 0.1,
-                minTrackingConfidence: 0.1
-            }
-        } else if( modelType === 'holistic'){
-            option = {
-                selfieMode: false,
-                modelComplexity: 1,
-                smoothLandmarks: true,
-                enableSegmentation: false,
-                smoothSegmentation: true,
-                minDetectionConfidence: 0.1,
-                minTrackingConfidence: 0.1
+                baseOptions: {
+                    modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+                    delegate: "GPU"
+                },
+                outputFaceBlendshapes: true,
+                runningMode: this.runningMode,
+                numFaces: 1
             }
         } else if ( modelType === 'objectron'){
             option = {
-                selfieMode: false,
-                modelName: 'Cup',
-                maxNumObjects: 1,
-            }
-        } else if (modelType === 'selfie_segmentation'){
-            option = {
-                selfieMode: false,
-                modelSelection: 1
+                baseOptions: {
+                  modelAssetPath: `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite`,
+                  delegate: "GPU"
+                },
+                scoreThreshold: 0.5,
+                categoryAllowlist: ["cell phone"],
+                runningMode: this.runningMode
             }
         } else if (modelType === 'pose'){
             option = {
-                selfieMode: false,
-                modelComplexity: 0
+                baseOptions: {
+                modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,
+                delegate: "GPU"
+                },
+                runningMode: this.runningMode,
+                numPoses: 2
             }
         }
         return option
     }
 
     init(modelType, mediapipeListener){
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             this.mediapipeListener_ = mediapipeListener
-            this.mediapipeHelper_ = new MediapipeHelper()
-            let config = {
-                mediaPipeModelConfigArray:[{
-                    listener: (result) => {
-                        this.mediapipeListener_?.onResult(result)
-                    },
-                    modelType: modelType,
-                    options: this.getModelOptions(modelType)
-                }]
+
+            const filesetResolver = await FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+                );
+
+            try {
+                if (modelType == MonitorType.FACE_MESH) {
+                    this.detector = await FaceLandmarker.createFromOptions(filesetResolver, this.getModelOptions(MonitorType.FACE_MESH));
+                }
+                else if (modelType == MonitorType.OBJECTRON) {
+                    this.detector = await ObjectDetector.createFromOptions(filesetResolver, this.getModelOptions(MonitorType.OBJECTRON));
+                }
+                else if (modelType == MonitorType.POSE) {
+                    this.detector = await PoseLandmarker.createFromOptions(filesetResolver, this.getModelOptions(MonitorType.POSE));
             }
-            this.mediapipeHelper_.initialize(config).then( () => {
                 resolve()
-            }).catch(e => {
+            }
+            catch(e) {
                 reject(e)
-            })
+            }
         })
+
     }
 
     onSend(data) {
-        return new Promise((resolve, reject) => {            
-            this.mediapipeHelper_?.send(data).then( () => {
-                resolve()
-            }).catch(e => {
-                reject(e)
-            })
-        })
+        const results = this.detector.detect(data);
+        this.mediapipeListener_?.onResult(results)
     }
 }
 

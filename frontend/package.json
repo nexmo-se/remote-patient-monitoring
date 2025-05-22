@@ -10,7 +10,6 @@
     "@testing-library/user-event": "^13.5.0",
     "@vonage/client-sdk-video": "^2.30.0",
     "@vonage/media-processor": "^2.0.4",
-    "@vonage/ml-transformers": "^6.1.0",
     "@vonage/vivid": "^2.36.1",
     "clsx": "^1.2.1",
     "delay": "^5.0.0",
