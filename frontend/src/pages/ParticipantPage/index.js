@@ -18,6 +18,7 @@ import { MediaProcessorConnector} from '@vonage/media-processor'
 import MediaProcessorHelperWorker from "helpers/MediaProcessorHelperWorker";
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import * as tf from '@tensorflow/tfjs';
+import { FilesetResolver } from "@mediapipe/tasks-vision";;
 
 import './styles.css'
 
@@ -35,6 +36,7 @@ function ParticipantPage() {
     const [humanDetectionInterval, setHumanDetectionInterval] = useState()
     const [isMeExist, setIsMeExist] = useState(true)
     const [hostConnectionIds, setHostConnectionIds] = useState([])
+    const [filesetResolver, setFileSetResolver] = useState(null)
 
     const navigate = useNavigate();
     const mSession = useContext(SessionContext);
@@ -52,10 +54,21 @@ function ParticipantPage() {
     },[])
 
     useEffect(() => {
-      if (mPublisher.stream && mMessage.monitoringType) {
+      async function loadFileResolver() {
+        const response = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+        );
+        setFileSetResolver(response);
+      }
+    
+      loadFileResolver();
+    }, []);
+
+    useEffect(() => {
+      if (mPublisher.stream && mMessage.monitoringType && filesetResolver) {
         setupMediaHelper(mMessage.monitoringType)
       }
-    }, [mMessage.monitoringType, mPublisher.stream, inCall])
+    }, [mMessage.monitoringType, mPublisher.stream, inCall, filesetResolver])
 
     useEffect(() => {
         if (!mSession.user || !mSession.session) {
@@ -173,7 +186,7 @@ function ParticipantPage() {
       console.log("change monitor type ", monitorType)
       const mediaProcessor = new MediaProcessorHelperWorker()
 
-      mediaProcessor.init(monitorType).then( () => {
+      mediaProcessor.init(monitorType, filesetResolver).then( () => {
         const connector = new MediaProcessorConnector(mediaProcessor)
 
         mediaProcessor.getEventEmitter().on('error', (e => {
@@ -215,7 +228,7 @@ function ParticipantPage() {
       ctx.drawImage(imageBitmap, 0, 0);
     
       // Run detection
-      const predictions = await model.detect(canvas);
+      const predictions = await model.detect(canvas, 2, 0.3);
 
       // Check if any prediction is a "person"
       const hasPerson = predictions.some(p => p.class === 'person');

@@ -1,6 +1,5 @@
-import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
 import { MonitorType } from "utils/constants";
-const { FaceLandmarker, FilesetResolver,  ObjectDetector, PoseLandmarker} = vision;
+import { FaceLandmarker, ObjectDetector, PoseLandmarker} from "@mediapipe/tasks-vision";;
 
 
 class MediapipeObject{
@@ -47,13 +46,9 @@ class MediapipeObject{
         return option
     }
 
-    init(modelType, mediapipeListener){
+    init(modelType, filesetResolver, mediapipeListener){
         return new Promise(async (resolve, reject) => {
             this.mediapipeListener_ = mediapipeListener
-
-            const filesetResolver = await FilesetResolver.forVisionTasks(
-                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-                );
 
             try {
                 if (modelType == MonitorType.FACE_MESH) {

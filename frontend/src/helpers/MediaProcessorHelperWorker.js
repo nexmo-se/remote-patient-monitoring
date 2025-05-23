@@ -51,7 +51,7 @@ class MediaProcessorHelperWorker {
         }
     }
 
-    init(modelType) {
+    init(modelType, filesetResolver) {
         return new Promise((resolve, reject) => {
             this.modelType_ = modelType
             this.worker_.addEventListener('message', ((msg) => {
@@ -63,7 +63,7 @@ class MediaProcessorHelperWorker {
                 metaData = JSON.stringify({})
             }
 
-            this.mediapipe_.init(modelType, this).then( () => {
+            this.mediapipe_.init(modelType, filesetResolver, this).then( () => {
                 this.worker_.postMessage({
                     operation: 'init',
                     modelType: modelType, 

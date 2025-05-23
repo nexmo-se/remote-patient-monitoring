@@ -1,6 +1,5 @@
 /* global VideoFrame */
-import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
-const { FaceLandmarker, PoseLandmarker, DrawingUtils } = vision;
+import { FaceLandmarker, PoseLandmarker, DrawingUtils } from "@mediapipe/tasks-vision";
 
 class MediapipeTransformer {
    
