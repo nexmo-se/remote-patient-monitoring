@@ -13,6 +13,7 @@ The app has the following roles:
   - See an indicator on the loudest participant's video tile
   - Subscribe to a participant's audio during monitoring
   - View the rest of the participant while in a call
+  - Monitor with Face Mesh, Pose, or Objectron to highlight faces, body movement, or cell phones.
   
 - Participants can:
   - Join a 1-1 call that initiated by a host
@@ -26,14 +27,16 @@ For human detection, we use Google Mediapipe Holistic library to detect a partic
   - Backend: NodeJS
   - Frontend: ReactJS
   - Video call/monitoring: Vonage Video API
-  - Human Detection: Mediapipe Holistic library
+  - Face Mesh, Pose, and Cell Phone Detection: Mediapipe library
 
 ## Debugging
+Go to /backend folder
 Rename `vcr.example.yml` to `vcr.yml` and fill in the variable.
 Run `vcr debug` to debug locally
 For more information: [VCR Debugging](https://developer.vonage.com/en/vonage-cloud-runtime/getting-started/debugging?source=vonage-cloud-runtime)
 
 ## Deploy to VCR
+Go to /backend folder
 Rename `vcr.example.yml` to `vcr.yml` and fill in the variable.
 Run `vcr deploy` to create a running instance
 For more information: [VCR Deploying](https://developer.vonage.com/en/vonage-cloud-runtime/getting-started/deploying?source=vonage-cloud-runtime)
