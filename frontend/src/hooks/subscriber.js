@@ -10,6 +10,8 @@ function useSubscriber({call, monitor}){
   const [ monitorSubscribers, setMonitorSubscribers ] = useState([]);
   const [ monitorSubscribersAudioVolume, setMonitorSubscribersAudioVolume] = useState([]);
   const [ soloAudioSubscriber, setSoloAudioSubscriber] = useState()
+  const [ inCallConnectionId, setInCallConnectionId] = useState()
+  const [ muteAllSubscriber, setMuteAllSubscriber] = useState(false)
 
   const [ loudestSubscriber, setLoudestSubscriber] = useState();
   const [ callLayout, setCalLayout ] = useState(new LayoutManager(call));
@@ -24,16 +26,14 @@ function useSubscriber({call, monitor}){
       mSession.changedStream.stream.id === subscriber.stream.id
     )
 
-    updateMuteIconVisibility(targetCallSubscriber, mSession.changedStream.stream)
+    updateMuteIconVisibility(targetCallSubscriber, !mSession.changedStream.stream.hasAudio)
 
   }, [mSession.changedStream])
 
-  function updateMuteIconVisibility(subscriber, stream, forceMute= false) {
+  function updateMuteIconVisibility(subscriber, isMuted) {
     if (!subscriber) return;
-    let mute = true
-    if ((stream && stream.hasAudio) || (!stream && !forceMute)) mute= false 
 
-    if (mute) {
+    if (isMuted) {
       const targetDom = document.getElementById(subscriber.id);
       if (targetDom) insertMuteIcon(subscriber,targetDom);
     }
@@ -112,6 +112,14 @@ function useSubscriber({call, monitor}){
     
   }
 
+  function updateInCallConnectionId(connectionId) {
+    setInCallConnectionId(connectionId)
+  }
+
+  function toggleMuteAllSubscriberAudio() {
+    setMuteAllSubscriber((prevState) => !prevState)
+  }
+
   useEffect(() => {
     if (!mSession.user || mSession.user.role !== "host") return;
 
@@ -123,16 +131,12 @@ function useSubscriber({call, monitor}){
     
     let currentLoudestDom = document.getElementById(loudestSubscriber.id);
     let targetId = loudestSubscriber.id;
-    if (soloAudioSubscriber) {
-      currentLoudestDom = document.getElementById(soloAudioSubscriber.id)
-      targetId = soloAudioSubscriber
-    }
 
     if (prevLoudestDom &&  prevLoudestDom.id === targetId)  return;
     if (prevLoudestDom) prevLoudestDom.classList.remove('loudest')
     if (currentLoudestDom && !currentLoudestDom.classList.contains("loudest")) currentLoudestDom.classList.add("loudest")
 
-  },[loudestSubscriber, mSession.user, mMessage.requestCall, soloAudioSubscriber])
+  },[loudestSubscriber, mSession.user, mMessage.requestCall])
 
   useEffect(() => {
     if (!mSession.user || mSession.user.role !== "host") return;
@@ -250,6 +254,38 @@ function useSubscriber({call, monitor}){
   }, [ callSubscribers, monitorSubscribers, callLayout, monitorLayout, call, monitor, mMessage.requestCall ]);
 
 
+  useEffect(() => {
+      // unsubscribe all audio exept solo subcriber
+      if (inCallConnectionId) {
+        callSubscribers.forEach((subscriber) => {
+          if (subscriber.stream && inCallConnectionId === subscriber.stream.connection.id) {
+            subscriber.subscribeToAudio(true)
+          }
+          else subscriber.subscribeToAudio(false)
+         })
+         monitorSubscribers.forEach((subscriber) => {
+           updateMuteIconVisibility(subscriber.subscribeToAudio(false), true)
+         })
+      }
+      else {
+        callSubscribers.forEach((subscriber) => {
+          subscriber.subscribeToAudio(false)
+        })
+        monitorSubscribers.forEach((subscriber) => {
+          if (muteAllSubscriber) {
+            updateMuteIconVisibility(subscriber.subscribeToAudio(false), true)
+          }
+          else if(soloAudioSubscriber && subscriber.id !== soloAudioSubscriber.id) {
+            updateMuteIconVisibility(subscriber.subscribeToAudio(false), true)
+          }
+          else {
+            updateMuteIconVisibility(subscriber.subscribeToAudio(true), false)
+          }
+        })
+      }
+  }, [soloAudioSubscriber, muteAllSubscriber, inCallConnectionId, monitorSubscribers, callSubscribers])
+
+
   return { 
     subscribe, 
     subscribeSingleStream,
@@ -261,6 +297,9 @@ function useSubscriber({call, monitor}){
     soloAudioSubscriber,
     loudestSubscriber,
     updateSoloAudioSubscriber,
-    updateMuteIconVisibility}
+    updateMuteIconVisibility,
+    muteAllSubscriber,
+    toggleMuteAllSubscriberAudio,
+    updateInCallConnectionId}
 }
 export default useSubscriber;

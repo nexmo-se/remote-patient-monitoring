@@ -122,40 +122,12 @@ function HostPage() {
     }, [mSession.connections, mMessage.requestCall])
 
     useEffect(() => {
-      if (inCall) {
-        mSubscriber.callSubscribers.forEach((subscriber) => {
-        if (subscriber.stream && mMessage.requestCall.id === subscriber.stream.connection.id) subscriber.setAudioVolume(100)
-        else subscriber.setAudioVolume(0)
-        })
-        mSubscriber.monitorSubscribers.forEach((subscriber) => {
-          subscriber.setAudioVolume(0)
-          mSubscriber.updateMuteIconVisibility(subscriber, null, true)
-        })
+      if (inCall && mMessage.requestCall && mMessage.requestCall.id !== '') {
+          mSubscriber.updateInCallConnectionId(mMessage.requestCall.id)
+      } else {
+        mSubscriber.updateInCallConnectionId(null)
       }
-      else {
-        mSubscriber.callSubscribers.forEach((subscriber) => {
-          subscriber.setAudioVolume(0)
-         })
-         if (mSubscriber.soloAudioSubscriber) {
-          mSubscriber.monitorSubscribers.forEach((subscriber) => {
-            if (subscriber.id === mSubscriber.soloAudioSubscriber.id) {
-              subscriber.setAudioVolume(100)
-              mSubscriber.updateMuteIconVisibility(subscriber, null, false)
-            }
-            else {
-              subscriber.setAudioVolume(0)
-              mSubscriber.updateMuteIconVisibility(subscriber, null, true)
-            }
-          })
-        }
-        else {
-          mSubscriber.monitorSubscribers.forEach((subscriber) => {
-            subscriber.setAudioVolume(100)
-            mSubscriber.updateMuteIconVisibility(subscriber, null, false)
-         })
-        }
-      }  
-    }, [mSubscriber.soloAudioSubscriber, inCall, mMessage.requestCall, mSubscriber.monitorSubscribers])
+    }, [inCall, mMessage.requestCall])
 
     // Open notification
     useEffect(() => {
@@ -259,12 +231,16 @@ function HostPage() {
       setAlarmActionsPosition(style)
     }
 
+    function toggleSubscriberAllButton() {
+      mSubscriber.toggleMuteAllSubscriberAudio()
+    }
+
     return (
       <QueueListDrawer open={openQueueList} hideDrawer={hideDrawer} acceptCall={callUser} rejectCall={rejectUser}>
       <div id="hostPage">
           {inCall? 
             <InfoBanner message="In Call"></InfoBanner> : 
-            <p style={{position: "absolute", top: "16px", left: "24px"}}>{`Subscribed Audio: ${mSubscriber.soloAudioSubscriber && mSubscriber.soloAudioSubscriber.stream ? JSON.parse(mSubscriber.soloAudioSubscriber.stream.connection.data).name: "All"}` }</p>
+            <p style={{position: "absolute", top: "16px", left: "24px"}}>{`Subscribed Audio: ${mSubscriber.muteAllSubscriber ? 'None' : mSubscriber.soloAudioSubscriber && mSubscriber.soloAudioSubscriber.stream ? JSON.parse(mSubscriber.soloAudioSubscriber.stream.connection.data).name: "All"}` }</p>
           }
           {mSession.connections.length === 1 && !inCall? <h1 className="noParticipantMessage">{`No ${ParticipantRole}`}</h1> : null }
           <div className={clsx("callContainer", (inCall)? "inCall" : "")}>
@@ -285,8 +261,17 @@ function HostPage() {
               />
             </VideoHoverContainer>
           ):
-            <div style={{position: "absolute", bottom: "32px", right: "64px"}}>
+            <div style={{position: "absolute", bottom: "32px", right: "128px"}}>
               <MonitoringControl />
+              <vwc-icon-button 
+                    icon={mSubscriber.muteAllSubscriber ? "audio-off-line" : "audio-mid-line"}
+                    connotation="alert"
+                    shape="circled"
+                    layout="filled"
+                    onClick={() => toggleSubscriberAllButton()}
+                    style={{position: "absolute", bottom: "4px", right: "-52px"}}
+                  >
+              </vwc-icon-button>
             </div>
           }
           <vwc-icon-button 
